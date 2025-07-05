@@ -1,6 +1,8 @@
 package jwave.transforms;
 
 import jwave.transforms.wavelets.Wavelet;
+import jwave.exceptions.JWaveException;
+import jwave.exceptions.JWaveFailure;
 
 import java.util.Arrays;
 
@@ -115,6 +117,59 @@ public class MODWTTransform extends WaveletTransform {
         return vCurrent;
     }
 
+    @Override
+    public double[] forward(double[] arrTime, int level) throws JWaveException {
+        if (arrTime == null || arrTime.length == 0) return new double[0];
+        
+        if (!isBinary(arrTime.length))
+            throw new JWaveFailure("MODWTTransform#forward - " +
+                "given array length is not 2^p | p E N ... = 1, 2, 4, 8, 16, 32, .. ");
+        
+        int maxLevel = calcExponent(arrTime.length);
+        if (level < 0 || level > maxLevel)
+            throw new JWaveFailure("MODWTTransform#forward - " +
+                "given level is out of range for given array");
+        
+        // Perform MODWT decomposition to specified level
+        double[][] coeffs2D = forwardMODWT(arrTime, level);
+        
+        // Flatten the 2D coefficient array into 1D
+        int N = arrTime.length;
+        double[] flatCoeffs = new double[N * (level + 1)];
+        
+        for (int lev = 0; lev <= level; lev++) {
+            System.arraycopy(coeffs2D[lev], 0, flatCoeffs, lev * N, N);
+        }
+        
+        return flatCoeffs;
+    }
+    
+    @Override
+    public double[] reverse(double[] arrHilb, int level) throws JWaveException {
+        if (arrHilb == null || arrHilb.length == 0) return new double[0];
+        
+        // For MODWT, we need the full coefficient set to reconstruct
+        // The level parameter indicates how many levels were used in decomposition
+        int N = arrHilb.length / (level + 1);
+        
+        if (!isBinary(N))
+            throw new JWaveFailure("MODWTTransform#reverse - " +
+                "Invalid coefficient array for given level");
+        
+        if (arrHilb.length != N * (level + 1))
+            throw new JWaveFailure("MODWTTransform#reverse - " +
+                "Coefficient array length does not match expected size for given level");
+        
+        // Unflatten the 1D array back to 2D structure
+        double[][] coeffs2D = new double[level + 1][N];
+        for (int lev = 0; lev <= level; lev++) {
+            System.arraycopy(arrHilb, lev * N, coeffs2D[lev], 0, N);
+        }
+        
+        // Perform inverse MODWT
+        return inverseMODWT(coeffs2D);
+    }
+
     // --- Helper and Overridden Methods ---
 
     private void normalize(double[] filter) {
@@ -172,15 +227,63 @@ public class MODWTTransform extends WaveletTransform {
     }
 
     @Override
-    public double[] forward(double[] arrTime) {
+    public double[] forward(double[] arrTime) throws JWaveException {
         if (arrTime == null || arrTime.length == 0) return new double[0];
-        double[][] allCoeffs = forwardMODWT(arrTime, 1);
-        return allCoeffs.length > 0 ? allCoeffs[0] : new double[0];
+        
+        // Calculate maximum decomposition level
+        int maxLevel = calcExponent(arrTime.length);
+        
+        // Perform full MODWT decomposition
+        double[][] coeffs2D = forwardMODWT(arrTime, maxLevel);
+        
+        // Flatten the 2D coefficient array into 1D
+        // Structure: [D1, D2, ..., D_maxLevel, A_maxLevel]
+        // Each has the same length as the input signal
+        int N = arrTime.length;
+        double[] flatCoeffs = new double[N * (maxLevel + 1)];
+        
+        for (int level = 0; level <= maxLevel; level++) {
+            System.arraycopy(coeffs2D[level], 0, flatCoeffs, level * N, N);
+        }
+        
+        return flatCoeffs;
     }
 
     @Override
-    public double[] reverse(double[] arrHilb) {
-        System.err.println("Reverse MODWT (iMODWT) is not supported for 1D input. Use inverseMODWT(double[][]).");
-        return new double[0];
+    public double[] reverse(double[] arrHilb) throws JWaveException {
+        if (arrHilb == null || arrHilb.length == 0) return new double[0];
+        
+        // Determine the signal length and number of levels from the flattened array
+        // The flattened array contains (maxLevel + 1) segments of equal length
+        // We need to find N such that arrHilb.length = N * (levels + 1)
+        int totalLength = arrHilb.length;
+        int N = 0;
+        int levels = 0;
+        
+        // Find the signal length by trying different possibilities
+        for (int testN = 1; testN <= totalLength; testN++) {
+            if (totalLength % testN == 0) {
+                int testLevels = (totalLength / testN) - 1;
+                if (testLevels >= 0 && isBinary(testN) && testLevels <= calcExponent(testN)) {
+                    N = testN;
+                    levels = testLevels;
+                    break;
+                }
+            }
+        }
+        
+        if (N == 0) {
+            throw new JWaveFailure("MODWTTransform#reverse - " +
+                "Invalid flattened coefficient array length. Cannot determine original signal dimensions.");
+        }
+        
+        // Unflatten the 1D array back to 2D structure
+        double[][] coeffs2D = new double[levels + 1][N];
+        for (int level = 0; level <= levels; level++) {
+            System.arraycopy(arrHilb, level * N, coeffs2D[level], 0, N);
+        }
+        
+        // Perform inverse MODWT
+        return inverseMODWT(coeffs2D);
     }
 }
