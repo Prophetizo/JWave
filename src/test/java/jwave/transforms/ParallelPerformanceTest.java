@@ -53,11 +53,11 @@ public class ParallelPerformanceTest {
             
             // Test parallel DFT
             parallelDFT = new ParallelDiscreteFourierTransform();
-            Transform parallelTransform = new Transform(parallelDFT);
+            Transform parallelDFTWrapper = new Transform(parallelDFT);
             PerformanceStats parStats = PerformanceTestUtils.measureRepeated(
                 () -> {
-                    double[] result = parallelTransform.forward(data.clone());
-                    parallelTransform.reverse(result);
+                    double[] result = parallelDFTWrapper.forward(data.clone());
+                    parallelDFTWrapper.reverse(result);
                 },
                 TEST_ITERATIONS,
                 WARMUP_ITERATIONS,
