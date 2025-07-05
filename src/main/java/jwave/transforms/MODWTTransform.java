@@ -453,24 +453,12 @@ public class MODWTTransform extends WaveletTransform {
         
         // Determine the signal length and number of levels from the flattened array
         // The flattened array contains (maxLevel + 1) segments of equal length
-        // We need to find N such that arrHilb.length = N * (levels + 1)
         int totalLength = arrHilb.length;
-        int N = 0;
-        int levels = 0;
+        int levels = calcExponent(totalLength);
+        int N = totalLength / (levels + 1);
         
-        // Find the signal length by trying different possibilities
-        for (int testN = 1; testN <= totalLength; testN++) {
-            if (totalLength % testN == 0) {
-                int testLevels = (totalLength / testN) - 1;
-                if (testLevels >= 0 && isBinary(testN) && testLevels <= calcExponent(testN)) {
-                    N = testN;
-                    levels = testLevels;
-                    break;
-                }
-            }
-        }
-        
-        if (N == 0) {
+        // Validate the computed dimensions
+        if (totalLength % (levels + 1) != 0 || !isBinary(N)) {
             throw new JWaveFailure("MODWTTransform#reverse - " +
                 "Invalid flattened coefficient array length. Cannot determine original signal dimensions.");
         }
