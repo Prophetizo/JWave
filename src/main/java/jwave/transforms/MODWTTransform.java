@@ -29,8 +29,8 @@ public class MODWTTransform extends WaveletTransform {
     public double[][] forwardMODWT(double[] data, int maxLevel) {
         int N = data.length;
 
-        double[] g_dwt = _wavelet.getScalingDeComposition();
-        double[] h_dwt = _wavelet.getWaveletDeComposition();
+        double[] g_dwt = Arrays.copyOf(_wavelet.getScalingDeComposition(), _wavelet.getScalingDeComposition().length);
+        double[] h_dwt = Arrays.copyOf(_wavelet.getWaveletDeComposition(), _wavelet.getWaveletDeComposition().length);
         normalize(g_dwt);
         normalize(h_dwt);
 
