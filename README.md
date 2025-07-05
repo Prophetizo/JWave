@@ -7,7 +7,7 @@
 
 ## Introduction
 
-Java implementation of a **Discrete Fourier Transform (DFT)**, a **Fast Wavelet Transform (FWT)**, and a **Wavelet Packet Transform (WPT)** algorithm. All algorithms are available **in 1-D, 2-D, and 3-D**. The wavelet transform algorithms are **using** normalized orthogonal or if available **orthonormal** wavelets. The comon **wavelets like Haar, Coiflet, Daubechies, Symlets, and Legendre** are available. Additionally there are also some Bi-Orthogonal and unusal wavelets implemented - in total around 50 wavelets.
+Java implementation of a **Discrete Fourier Transform (DFT)**, a **Fast Wavelet Transform (FWT)**, a **Wavelet Packet Transform (WPT)**, and a **Maximal Overlap Discrete Wavelet Transform (MODWT)** algorithm. All algorithms are available **in 1-D, 2-D, and 3-D** (except MODWT which is currently 1-D). The wavelet transform algorithms are **using** normalized orthogonal or if available **orthonormal** wavelets. The common **wavelets like Haar, Coiflet, Daubechies, Symlets, and Legendre** are available. Additionally there are also some Bi-Orthogonal and unusal wavelets implemented - in total around 50 wavelets.
 
 The implementation of JWave is based on several software design patterns and - hopefully - appears therefore user-friendly.
 
@@ -19,7 +19,10 @@ Have a look at the little **how to down the page** or try looking at  [the unit 
 
 ### Can I perform odd samplings like, e.g. 127 data points?
 
-However, the bare algorithms of JWave do only support data sampled by 2^p | p E N; e.g. 2, 4, 8, 16, .. 128, 256, 512, 1024, .. and so on. Please use the AncientEgyptianDecomposition class for odd samplings (most frequently asked question)! You can find it *down the page*.
+The standard FWT and WPT algorithms in JWave only support data sampled by 2^p | p E N; e.g. 2, 4, 8, 16, .. 128, 256, 512, 1024, .. and so on. However, you have two options for handling arbitrary length signals:
+
+1. **AncientEgyptianDecomposition class** - wraps FWT/WPT to handle odd samplings (see examples below)
+2. **MODWT (Maximal Overlap Discrete Wavelet Transform)** - natively supports signals of any length without padding or truncation
 
 ### Why are the results totally different then expected?!
 
@@ -38,6 +41,22 @@ Additionally the application of the transform - independent of using some differ
 ### HowTo
 
 For a quick test, pull the repository and then: *ant && ant test*. This builds a JWave.jar and the corresponding unit tests. Afterwards *all* units test are executed.
+
+### MODWT - Maximal Overlap Discrete Wavelet Transform
+
+The MODWT is a shift-invariant wavelet transform that offers several advantages over the standard DWT:
+
+- **Handles any signal length** - no need for padding or power-of-2 restrictions
+- **Shift-invariant** - translated signals produce translated coefficients
+- **Energy preserving** - total variance equals sum of coefficient variances
+- **Perfect reconstruction** - exact signal recovery (within numerical precision)
+- **Multi-resolution analysis** - analyze signals at different frequency scales
+
+Key applications include:
+- **Signal denoising** - threshold detail coefficients to remove noise
+- **Feature extraction** - analyze energy distribution across scales
+- **Time-frequency analysis** - maintains temporal alignment of features
+- **Selective reconstruction** - reconstruct using specific frequency bands
 
 ### Doing own stuff e.g. data compression
 
@@ -132,6 +151,34 @@ double[ ] arrHilb = t.forward( arrTime ); // 1-D AED WPT Haar forward
 double[ ] arrReco = t.reverse( arrHilb ); // 1-D AED WPT Haar reverse
 ```
 
+**example for 1-D MODWT (shift-invariant transform):**
+```Java
+// MODWT works with any signal length and is shift-invariant
+MODWTTransform modwt = new MODWTTransform( new Daubechies4( ) );
+
+double[ ] signal = { 1.5, 0.8, -0.3, 2.1, -1.2, 0.7, 1.9 }; // arbitrary length
+
+// Forward MODWT to level 3
+double[ ][ ] coeffs = modwt.forwardMODWT( signal, 3 );
+// coeffs[0] = detail coefficients level 1
+// coeffs[1] = detail coefficients level 2  
+// coeffs[2] = detail coefficients level 3
+// coeffs[3] = approximation coefficients level 3
+
+// Perfect reconstruction
+double[ ] reconstructed = modwt.inverseMODWT( coeffs );
+
+// Denoising example - threshold detail coefficients
+double threshold = 0.5;
+for( int level = 0; level < 3; level++ ) {
+    for( int i = 0; i < coeffs[level].length; i++ ) {
+        if( Math.abs( coeffs[level][i] ) < threshold )
+            coeffs[level][i] = 0.0; // soft thresholding
+    }
+}
+double[ ] denoised = modwt.inverseMODWT( coeffs );
+```
+
 **Have fun! :-)**
 
 ## CONTACT
@@ -164,9 +211,17 @@ THE SOFTWARE.
 
 ## VERSION
 
-**JWave is in version 200303.**
+**JWave is in version 250105.**
 
 ## CHANGE LOG
+
+version **250105**:
+- added Maximal Overlap Discrete Wavelet Transform (MODWT) implementation
+ - shift-invariant wavelet transform for signals of arbitrary length
+ - includes forward MODWT and inverse MODWT (iMODWT) with perfect reconstruction
+ - supports multi-level decomposition with all JWave wavelets
+ - ideal for denoising, feature extraction, and time-frequency analysis
+ - comprehensive unit tests and example applications included
 
 version **200303**:
 - updating copyright and contact information to graetz23
