@@ -7,7 +7,7 @@
 
 ## Introduction
 
-Java implementation of a **Discrete Fourier Transform (DFT)**, a **Fast Wavelet Transform (FWT)**, a **Wavelet Packet Transform (WPT)**, and a **Maximal Overlap Discrete Wavelet Transform (MODWT)** algorithm. All algorithms are available **in 1-D, 2-D, and 3-D** (except MODWT which is currently 1-D). The wavelet transform algorithms are **using** normalized orthogonal or if available **orthonormal** wavelets. The comon **wavelets like Haar, Coiflet, Daubechies, Symlets, and Legendre** are available. Additionally there are also some Bi-Orthogonal and unusal wavelets implemented - in total around 50 wavelets.
+Java implementation of a **Discrete Fourier Transform (DFT)**, a **Fast Wavelet Transform (FWT)**, a **Wavelet Packet Transform (WPT)**, and a **Maximal Overlap Discrete Wavelet Transform (MODWT)** algorithm. All algorithms are available **in 1-D, 2-D, and 3-D** (except MODWT which is currently 1-D). The wavelet transform algorithms are **using** normalized orthogonal or if available **orthonormal** wavelets. The common **wavelets like Haar, Coiflet, Daubechies, Symlets, and Legendre** are available. Additionally there are also some Bi-Orthogonal and unusal wavelets implemented - in total around 50 wavelets.
 
 The implementation of JWave is based on several software design patterns and - hopefully - appears therefore user-friendly.
 
