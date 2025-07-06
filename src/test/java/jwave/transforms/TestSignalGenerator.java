@@ -1,5 +1,7 @@
 package jwave.transforms;
 
+import java.util.Random;
+
 /**
  * Common test signal generation utilities for wavelet transform tests.
  * Provides various types of test signals commonly used in signal processing.
@@ -21,11 +23,12 @@ public class TestSignalGenerator {
      * @return A signal containing multiple frequency components and noise
      */
     public static double[] generateCompositeSignal(int length) {
+        Random rnd = new Random(123456789); // Fixed seed for reproducibility
         double[] signal = new double[length];
         for (int i = 0; i < length; i++) {
             signal[i] = Math.sin(2 * Math.PI * i / 32.0) + 
                        0.5 * Math.sin(2 * Math.PI * i / 8.0) +
-                       0.1 * RANDOM.nextDouble();
+                       0.1 * rnd.nextDouble();
         }
         return signal;
     }
