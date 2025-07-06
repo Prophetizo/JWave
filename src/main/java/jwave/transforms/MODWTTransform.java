@@ -5,6 +5,8 @@ import jwave.exceptions.JWaveException;
 import jwave.exceptions.JWaveFailure;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An implementation of the Maximal Overlap Discrete Wavelet Transform (MODWT)
@@ -99,6 +101,17 @@ import java.util.Arrays;
  */
 public class MODWTTransform extends WaveletTransform {
 
+    // Cache for upsampled filters, keyed by level
+    private transient Map<Integer, double[]> gFilterCache;
+    private transient Map<Integer, double[]> hFilterCache;
+    
+    // Base MODWT filters (computed once from wavelet)
+    private transient double[] g_modwt_base;
+    private transient double[] h_modwt_base;
+    
+    // Flag to track if cache is valid (volatile for thread visibility)
+    private transient volatile boolean cacheInitialized = false;
+
     /**
      * Constructor for the MODWTTransform.
      * 
@@ -145,26 +158,17 @@ public class MODWTTransform extends WaveletTransform {
      */
     public double[][] forwardMODWT(double[] data, int maxLevel) {
         int N = data.length;
-
-        double[] g_dwt = Arrays.copyOf(_wavelet.getScalingDeComposition(), _wavelet.getScalingDeComposition().length);
-        double[] h_dwt = Arrays.copyOf(_wavelet.getWaveletDeComposition(), _wavelet.getWaveletDeComposition().length);
-        normalize(g_dwt);
-        normalize(h_dwt);
-
-        double scaleFactor = Math.sqrt(2.0);
-        double[] g_modwt = new double[g_dwt.length];
-        double[] h_modwt = new double[h_dwt.length];
-        for (int i = 0; i < g_dwt.length; i++) {
-            g_modwt[i] = g_dwt[i] / scaleFactor;
-            h_modwt[i] = h_dwt[i] / scaleFactor;
-        }
+        
+        // Initialize cache if needed
+        initializeFilterCache();
 
         double[][] modwtCoeffs = new double[maxLevel + 1][N];
         double[] vCurrent = Arrays.copyOf(data, N);
 
         for (int j = 1; j <= maxLevel; j++) {
-            double[] gUpsampled = upsample(g_modwt, j);
-            double[] hUpsampled = upsample(h_modwt, j);
+            // Use cached filters instead of creating new ones
+            double[] gUpsampled = getCachedGFilter(j);
+            double[] hUpsampled = getCachedHFilter(j);
 
             double[] wNext = circularConvolve(vCurrent, hUpsampled);
             double[] vNext = circularConvolve(vCurrent, gUpsampled);
@@ -217,26 +221,16 @@ public class MODWTTransform extends WaveletTransform {
         if (maxLevel < 0) return new double[0];
 
         int N = coefficients[0].length;
-
-        // *** FINAL REFINEMENT: The inverse transform uses the DECOMPOSITION filters with the adjoint operator. ***
-        double[] g_dwt = _wavelet.getScalingDeComposition();
-        double[] h_dwt = _wavelet.getWaveletDeComposition();
-        normalize(g_dwt);
-        normalize(h_dwt);
-
-        double scaleFactor = Math.sqrt(2.0);
-        double[] g_modwt = new double[g_dwt.length];
-        double[] h_modwt = new double[h_dwt.length];
-        for (int i = 0; i < g_dwt.length; i++) {
-            g_modwt[i] = g_dwt[i] / scaleFactor;
-            h_modwt[i] = h_dwt[i] / scaleFactor;
-        }
+        
+        // Initialize cache if needed
+        initializeFilterCache();
 
         double[] vCurrent = Arrays.copyOf(coefficients[maxLevel], N);
 
         for (int j = maxLevel; j >= 1; j--) {
-            double[] gUpsampled = upsample(g_modwt, j);
-            double[] hUpsampled = upsample(h_modwt, j);
+            // Use cached filters instead of creating new ones
+            double[] gUpsampled = getCachedGFilter(j);
+            double[] hUpsampled = getCachedHFilter(j);
 
             double[] wCurrent = coefficients[j - 1];
 
@@ -320,6 +314,85 @@ public class MODWTTransform extends WaveletTransform {
     }
 
     // --- Helper and Overridden Methods ---
+    
+    /**
+     * Initializes the filter cache if not already initialized.
+     * Computes the base MODWT filters from the wavelet coefficients.
+     * Thread-safe through double-checked locking pattern.
+     */
+    private void initializeFilterCache() {
+        if (!cacheInitialized || g_modwt_base == null) {
+            synchronized (this) {
+                // Double-check inside synchronized block
+                if (!cacheInitialized || g_modwt_base == null) {
+                    // Compute base MODWT filters
+                    double[] g_dwt = Arrays.copyOf(_wavelet.getScalingDeComposition(), 
+                                                   _wavelet.getScalingDeComposition().length);
+                    double[] h_dwt = Arrays.copyOf(_wavelet.getWaveletDeComposition(), 
+                                                   _wavelet.getWaveletDeComposition().length);
+                    normalize(g_dwt);
+                    normalize(h_dwt);
+                    
+                    double scaleFactor = Math.sqrt(2.0);
+                    g_modwt_base = new double[g_dwt.length];
+                    h_modwt_base = new double[h_dwt.length];
+                    for (int i = 0; i < g_dwt.length; i++) {
+                        g_modwt_base[i] = g_dwt[i] / scaleFactor;
+                        h_modwt_base[i] = h_dwt[i] / scaleFactor;
+                    }
+                    
+                    // Initialize cache maps with ConcurrentHashMap for thread safety
+                    gFilterCache = new ConcurrentHashMap<>();
+                    hFilterCache = new ConcurrentHashMap<>();
+                    cacheInitialized = true;
+                }
+            }
+        }
+    }
+    
+    /**
+     * Gets the cached upsampled G filter for the specified level.
+     * Creates and caches it if not already present.
+     */
+    private double[] getCachedGFilter(int level) {
+        initializeFilterCache();
+        return gFilterCache.computeIfAbsent(level, k -> upsample(g_modwt_base, k));
+    }
+    
+    /**
+     * Gets the cached upsampled H filter for the specified level.
+     * Creates and caches it if not already present.
+     */
+    private double[] getCachedHFilter(int level) {
+        initializeFilterCache();
+        return hFilterCache.computeIfAbsent(level, k -> upsample(h_modwt_base, k));
+    }
+    
+    /**
+     * Clears the filter cache. Call this if memory is a concern
+     * or before changing wavelets. Thread-safe.
+     */
+    public void clearFilterCache() {
+        synchronized (this) {
+            if (gFilterCache != null) gFilterCache.clear();
+            if (hFilterCache != null) hFilterCache.clear();
+            // Don't set base filters to null - they can be reused
+            // Just mark as uninitialized so they'll be recomputed if needed
+            cacheInitialized = false;
+        }
+    }
+    
+    /**
+     * Pre-computes filters for specified levels to avoid
+     * computation during time-critical operations.
+     */
+    public void precomputeFilters(int maxLevel) {
+        initializeFilterCache();
+        for (int j = 1; j <= maxLevel; j++) {
+            getCachedGFilter(j);
+            getCachedHFilter(j);
+        }
+    }
 
     /**
      * Normalizes a filter to have unit energy (L2 norm = 1).
