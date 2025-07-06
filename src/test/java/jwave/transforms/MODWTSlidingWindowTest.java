@@ -80,7 +80,6 @@ public class MODWTSlidingWindowTest {
             
             double[][] coeffs = modwt.forwardMODWT(window, DECOMP_LEVELS);
             // Simulate some processing
-            // Simulate some processing
         }
         
         long timeWithCache = System.nanoTime() - startWithCache;
