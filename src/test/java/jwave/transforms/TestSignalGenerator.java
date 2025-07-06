@@ -9,6 +9,11 @@ package jwave.transforms;
 public class TestSignalGenerator {
     
     /**
+     * Private constructor to prevent instantiation of this utility class.
+     */
+    private TestSignalGenerator() {}
+    
+    /**
      * Generates a composite sinusoidal signal with noise.
      * This is the most commonly used test signal across MODWT tests.
      * 
