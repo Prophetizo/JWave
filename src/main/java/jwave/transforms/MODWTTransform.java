@@ -6,7 +6,7 @@ import jwave.exceptions.JWaveFailure;
 
 import java.util.Arrays;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An implementation of the Maximal Overlap Discrete Wavelet Transform (MODWT)
@@ -109,8 +109,8 @@ public class MODWTTransform extends WaveletTransform {
     private transient double[] g_modwt_base;
     private transient double[] h_modwt_base;
     
-    // Flag to track if cache is valid
-    private transient boolean cacheInitialized = false;
+    // Flag to track if cache is valid (volatile for thread visibility)
+    private transient volatile boolean cacheInitialized = false;
 
     /**
      * Constructor for the MODWTTransform.
@@ -318,29 +318,35 @@ public class MODWTTransform extends WaveletTransform {
     /**
      * Initializes the filter cache if not already initialized.
      * Computes the base MODWT filters from the wavelet coefficients.
+     * Thread-safe through double-checked locking pattern.
      */
     private void initializeFilterCache() {
         if (!cacheInitialized || g_modwt_base == null) {
-            // Compute base MODWT filters
-            double[] g_dwt = Arrays.copyOf(_wavelet.getScalingDeComposition(), 
-                                           _wavelet.getScalingDeComposition().length);
-            double[] h_dwt = Arrays.copyOf(_wavelet.getWaveletDeComposition(), 
-                                           _wavelet.getWaveletDeComposition().length);
-            normalize(g_dwt);
-            normalize(h_dwt);
-            
-            double scaleFactor = Math.sqrt(2.0);
-            g_modwt_base = new double[g_dwt.length];
-            h_modwt_base = new double[h_dwt.length];
-            for (int i = 0; i < g_dwt.length; i++) {
-                g_modwt_base[i] = g_dwt[i] / scaleFactor;
-                h_modwt_base[i] = h_dwt[i] / scaleFactor;
+            synchronized (this) {
+                // Double-check inside synchronized block
+                if (!cacheInitialized || g_modwt_base == null) {
+                    // Compute base MODWT filters
+                    double[] g_dwt = Arrays.copyOf(_wavelet.getScalingDeComposition(), 
+                                                   _wavelet.getScalingDeComposition().length);
+                    double[] h_dwt = Arrays.copyOf(_wavelet.getWaveletDeComposition(), 
+                                                   _wavelet.getWaveletDeComposition().length);
+                    normalize(g_dwt);
+                    normalize(h_dwt);
+                    
+                    double scaleFactor = Math.sqrt(2.0);
+                    g_modwt_base = new double[g_dwt.length];
+                    h_modwt_base = new double[h_dwt.length];
+                    for (int i = 0; i < g_dwt.length; i++) {
+                        g_modwt_base[i] = g_dwt[i] / scaleFactor;
+                        h_modwt_base[i] = h_dwt[i] / scaleFactor;
+                    }
+                    
+                    // Initialize cache maps with ConcurrentHashMap for thread safety
+                    gFilterCache = new ConcurrentHashMap<>();
+                    hFilterCache = new ConcurrentHashMap<>();
+                    cacheInitialized = true;
+                }
             }
-            
-            // Initialize cache maps
-            gFilterCache = new HashMap<>();
-            hFilterCache = new HashMap<>();
-            cacheInitialized = true;
         }
     }
     
@@ -364,14 +370,16 @@ public class MODWTTransform extends WaveletTransform {
     
     /**
      * Clears the filter cache. Call this if memory is a concern
-     * or before changing wavelets.
+     * or before changing wavelets. Thread-safe.
      */
     public void clearFilterCache() {
-        if (gFilterCache != null) gFilterCache.clear();
-        if (hFilterCache != null) hFilterCache.clear();
-        cacheInitialized = false;
-        g_modwt_base = null;
-        h_modwt_base = null;
+        synchronized (this) {
+            if (gFilterCache != null) gFilterCache.clear();
+            if (hFilterCache != null) hFilterCache.clear();
+            // Don't set base filters to null - they can be reused
+            // Just mark as uninitialized so they'll be recomputed if needed
+            cacheInitialized = false;
+        }
     }
     
     /**
