@@ -192,6 +192,14 @@ public class MODWTTransform extends WaveletTransform {
         }
         int N = data.length;
         
+        // Check theoretical limit based on signal length
+        // Use integer-based approach for efficiency and precision: floor(log2(N)) = 31 - numberOfLeadingZeros(N)
+        int theoreticalMaxLevel = N > 0 ? 31 - Integer.numberOfLeadingZeros(N) : 0;
+        if (maxLevel > theoreticalMaxLevel) {
+            throw new IllegalArgumentException("Decomposition level " + maxLevel + " exceeds theoretical limit " + 
+                theoreticalMaxLevel + " for signal length " + N);
+        }
+        
         // Initialize cache if needed
         initializeFilterCache();
 
