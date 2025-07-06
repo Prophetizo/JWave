@@ -25,7 +25,7 @@ public class TestSignalGenerator {
         for (int i = 0; i < length; i++) {
             signal[i] = Math.sin(2 * Math.PI * i / 32.0) + 
                        0.5 * Math.sin(2 * Math.PI * i / 8.0) +
-                       0.1 * Math.random();
+                       0.1 * RANDOM.nextDouble();
         }
         return signal;
     }
