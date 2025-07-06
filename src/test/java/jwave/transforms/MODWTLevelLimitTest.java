@@ -8,33 +8,36 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Test the maximum decomposition level limit of 13 for MODWTTransform.
- * 13 is chosen as it's a Fibonacci number and provides a reasonable
+ * Test the maximum decomposition level limit for MODWTTransform.
+ * The limit is set to a Fibonacci number and provides a reasonable
  * balance between flexibility and memory constraints.
  */
 public class MODWTLevelLimitTest {
+    
+    private static final int MAX_LEVEL = MODWTTransform.getMaxDecompositionLevel();
     
     @Test
     public void testMaximumLevelIsEnforced() {
         MODWTTransform modwt = new MODWTTransform(new Haar1());
         double[] signal = new double[16384]; // 2^14, enough for 14 levels theoretically
         
-        // Level 13 should work
+        // MAX_LEVEL should work
         try {
-            double[][] result = modwt.forwardMODWT(signal, 13);
-            assertNotNull("Level 13 should succeed", result);
-            assertEquals("Should return 14 arrays (13 details + 1 approximation)", 14, result.length);
+            double[][] result = modwt.forwardMODWT(signal, MAX_LEVEL);
+            assertNotNull("Level " + MAX_LEVEL + " should succeed", result);
+            assertEquals("Should return " + (MAX_LEVEL + 1) + " arrays (" + MAX_LEVEL + 
+                        " details + 1 approximation)", MAX_LEVEL + 1, result.length);
         } catch (Exception e) {
-            fail("Level 13 should not throw exception: " + e.getMessage());
+            fail("Level " + MAX_LEVEL + " should not throw exception: " + e.getMessage());
         }
         
-        // Level 14 should fail
+        // MAX_LEVEL + 1 should fail
         try {
-            modwt.forwardMODWT(signal, 14);
-            fail("Level 14 should throw exception");
+            modwt.forwardMODWT(signal, MAX_LEVEL + 1);
+            fail("Level " + (MAX_LEVEL + 1) + " should throw exception");
         } catch (IllegalArgumentException e) {
-            assertTrue("Exception message should mention level 13", 
-                      e.getMessage().contains("13"));
+            assertTrue("Exception message should mention level " + MAX_LEVEL, 
+                      e.getMessage().contains(String.valueOf(MAX_LEVEL)));
         }
     }
     
@@ -42,20 +45,20 @@ public class MODWTLevelLimitTest {
     public void testPrecomputeFiltersLevelLimit() {
         MODWTTransform modwt = new MODWTTransform(new Haar1());
         
-        // Level 13 should work
+        // MAX_LEVEL should work
         try {
-            modwt.precomputeFilters(13);
+            modwt.precomputeFilters(MAX_LEVEL);
         } catch (Exception e) {
-            fail("precomputeFilters(13) should not throw exception: " + e.getMessage());
+            fail("precomputeFilters(" + MAX_LEVEL + ") should not throw exception: " + e.getMessage());
         }
         
-        // Level 14 should fail
+        // MAX_LEVEL + 1 should fail
         try {
-            modwt.precomputeFilters(14);
-            fail("precomputeFilters(14) should throw exception");
+            modwt.precomputeFilters(MAX_LEVEL + 1);
+            fail("precomputeFilters(" + (MAX_LEVEL + 1) + ") should throw exception");
         } catch (IllegalArgumentException e) {
-            assertTrue("Exception message should mention level 13", 
-                      e.getMessage().contains("13"));
+            assertTrue("Exception message should mention level " + MAX_LEVEL, 
+                      e.getMessage().contains(String.valueOf(MAX_LEVEL)));
         }
     }
     
@@ -64,59 +67,59 @@ public class MODWTLevelLimitTest {
         MODWTTransform modwt = new MODWTTransform(new Haar1());
         double[] signal = new double[16384]; // 2^14
         
-        // Level 13 should work
+        // MAX_LEVEL should work
         try {
-            double[] result = modwt.forward(signal, 13);
-            assertNotNull("Level 13 should succeed", result);
+            double[] result = modwt.forward(signal, MAX_LEVEL);
+            assertNotNull("Level " + MAX_LEVEL + " should succeed", result);
         } catch (JWaveFailure e) {
-            fail("forward() with level 13 should not throw exception: " + e.getMessage());
+            fail("forward() with level " + MAX_LEVEL + " should not throw exception: " + e.getMessage());
         }
         
-        // Level 14 should fail
+        // MAX_LEVEL + 1 should fail
         try {
-            modwt.forward(signal, 14);
-            fail("forward() with level 14 should throw exception");
+            modwt.forward(signal, MAX_LEVEL + 1);
+            fail("forward() with level " + (MAX_LEVEL + 1) + " should throw exception");
         } catch (JWaveFailure e) {
-            assertTrue("Exception message should mention level 13", 
-                      e.getMessage().contains("13"));
+            assertTrue("Exception message should mention level " + MAX_LEVEL, 
+                      e.getMessage().contains(String.valueOf(MAX_LEVEL)));
         }
     }
     
     @Test
-    public void testUpsamplingAtLevel13() {
+    public void testUpsamplingAtMaxLevel() {
         MODWTTransform modwt = new MODWTTransform(new Haar1());
         double[] smallSignal = new double[1024]; // 2^10
         
-        // Even with a small signal, we should be able to request level 13
+        // Even with a small signal, we should be able to request MAX_LEVEL
         // (though it may not be meaningful)
         try {
-            modwt.precomputeFilters(13);
-            // The cache should now contain upsampled filters for levels 1-13
+            modwt.precomputeFilters(MAX_LEVEL);
+            // The cache should now contain upsampled filters for levels 1-MAX_LEVEL
         } catch (Exception e) {
-            fail("Should be able to pre-compute filters up to level 13: " + e.getMessage());
+            fail("Should be able to pre-compute filters up to level " + MAX_LEVEL + ": " + e.getMessage());
         }
     }
     
     @Test
     public void testFibonacciLevelChoice() {
-        // Verify that 13 is indeed a Fibonacci number
+        // Verify that MAX_LEVEL is indeed a Fibonacci number
         int[] fibonacci = {0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144};
         boolean isFibonacci = false;
         for (int fib : fibonacci) {
-            if (fib == 13) {
+            if (fib == MAX_LEVEL) {
                 isFibonacci = true;
                 break;
             }
         }
-        assertTrue("13 should be a Fibonacci number", isFibonacci);
+        assertTrue(MAX_LEVEL + " should be a Fibonacci number", isFibonacci);
         
-        // At level 13, filter sizes become quite large
-        // For Haar (2 coefficients), upsampled size = 2 + (2-1) * (2^12 - 1) = 4096
-        // For Db4 (8 coefficients), upsampled size = 8 + (8-1) * (2^12 - 1) = 28,673
+        // At MAX_LEVEL, filter sizes become quite large
+        // For Haar (2 coefficients), upsampled size = 2 + (2-1) * (2^(MAX_LEVEL-1) - 1)
+        // For Db4 (8 coefficients), upsampled size = 8 + (8-1) * (2^(MAX_LEVEL-1) - 1)
         // These are still manageable sizes
         
         MODWTTransform modwt = new MODWTTransform(new Haar1());
-        modwt.precomputeFilters(13);
+        modwt.precomputeFilters(MAX_LEVEL);
         
         // The filters should be cached and ready for use
         double[] testSignal = new double[8192];

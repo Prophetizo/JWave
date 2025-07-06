@@ -101,6 +101,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MODWTTransform extends WaveletTransform {
 
+    /**
+     * Maximum supported decomposition level.
+     * Set to 13 (a Fibonacci number) to balance flexibility with memory constraints.
+     * At level 13, filter sizes can reach ~77K coefficients for longer wavelets.
+     */
+    private static final int MAX_DECOMPOSITION_LEVEL = 13;
+
     // Cache for upsampled filters, keyed by level
     private transient Map<Integer, double[]> gFilterCache;
     private transient Map<Integer, double[]> hFilterCache;
@@ -122,6 +129,15 @@ public class MODWTTransform extends WaveletTransform {
      */
     public MODWTTransform(Wavelet wavelet) {
         super(wavelet);
+    }
+    
+    /**
+     * Returns the maximum supported decomposition level.
+     * 
+     * @return The maximum decomposition level (currently 13)
+     */
+    public static int getMaxDecompositionLevel() {
+        return MAX_DECOMPOSITION_LEVEL;
     }
 
     /**
@@ -157,8 +173,9 @@ public class MODWTTransform extends WaveletTransform {
      * }</pre>
      */
     public double[][] forwardMODWT(double[] data, int maxLevel) {
-        if (maxLevel > 13) {
-            throw new IllegalArgumentException("Maximum decomposition level is 13, requested: " + maxLevel);
+        if (maxLevel > MAX_DECOMPOSITION_LEVEL) {
+            throw new IllegalArgumentException("Maximum decomposition level is " + 
+                MAX_DECOMPOSITION_LEVEL + ", requested: " + maxLevel);
         }
         int N = data.length;
         
@@ -275,9 +292,10 @@ public class MODWTTransform extends WaveletTransform {
         if (level < 0 || level > maxLevel)
             throw new JWaveFailure("MODWTTransform#forward - " +
                 "given level is out of range for given array");
-        if (level > 13)
+        if (level > MAX_DECOMPOSITION_LEVEL)
             throw new JWaveFailure("MODWTTransform#forward - " +
-                "maximum supported decomposition level is 13, requested: " + level);
+                "maximum supported decomposition level is " + MAX_DECOMPOSITION_LEVEL + 
+                ", requested: " + level);
         
         // Perform MODWT decomposition to specified level
         double[][] coeffs2D = forwardMODWT(arrTime, level);
@@ -392,12 +410,13 @@ public class MODWTTransform extends WaveletTransform {
      * Pre-computes filters for specified levels to avoid
      * computation during time-critical operations.
      * 
-     * @param maxLevel The maximum decomposition level to pre-compute (1 ≤ maxLevel ≤ 13)
-     * @throws IllegalArgumentException if maxLevel exceeds 13
+     * @param maxLevel The maximum decomposition level to pre-compute (1 ≤ maxLevel ≤ MAX_DECOMPOSITION_LEVEL)
+     * @throws IllegalArgumentException if maxLevel exceeds MAX_DECOMPOSITION_LEVEL
      */
     public void precomputeFilters(int maxLevel) {
-        if (maxLevel > 13) {
-            throw new IllegalArgumentException("Maximum decomposition level is 13, requested: " + maxLevel);
+        if (maxLevel > MAX_DECOMPOSITION_LEVEL) {
+            throw new IllegalArgumentException("Maximum decomposition level is " + 
+                MAX_DECOMPOSITION_LEVEL + ", requested: " + maxLevel);
         }
         initializeFilterCache();
         for (int j = 1; j <= maxLevel; j++) {
@@ -431,7 +450,7 @@ public class MODWTTransform extends WaveletTransform {
      */
     private static double[] upsample(double[] filter, int level) {
         if (level <= 1) return filter;
-        if (level > 13) throw new IllegalArgumentException("Level too large for upsampling: " + level + " (maximum supported level is 13)");
+        if (level > MAX_DECOMPOSITION_LEVEL) throw new IllegalArgumentException("Level too large for upsampling: " + level + " (maximum supported level is " + MAX_DECOMPOSITION_LEVEL + ")");
         int gap = (1 << (level - 1)) - 1;
         int newLength = filter.length + (filter.length - 1) * gap;
         if (newLength < 0 || newLength < filter.length) throw new IllegalArgumentException("Upsampling would result in array too large");
