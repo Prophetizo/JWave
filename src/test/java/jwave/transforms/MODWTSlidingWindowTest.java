@@ -78,7 +78,7 @@ public class MODWTSlidingWindowTest {
             
             double[][] coeffs = modwt.forwardMODWT(window, DECOMP_LEVELS);
             // Simulate some processing
-            double energy = calculateEnergy(coeffs[0]);
+            // Simulate some processing
         }
         
         long timeWithCache = System.nanoTime() - startWithCache;
