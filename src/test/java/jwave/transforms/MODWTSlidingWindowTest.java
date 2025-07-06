@@ -61,6 +61,7 @@ public class MODWTSlidingWindowTest {
             double[][] coeffs = modwt.forwardMODWT(window, DECOMP_LEVELS);
             // Simulate some processing (e.g., feature extraction)
             double energy = calculateEnergy(coeffs[0]); // Level 1 energy
+            assert energy >= 0 : "Energy value should be non-negative";
         }
         
         long timeNoCache = System.nanoTime() - startNoCache;
