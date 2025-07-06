@@ -4,6 +4,8 @@ import jwave.transforms.wavelets.haar.Haar1;
 import jwave.transforms.wavelets.daubechies.Daubechies4;
 import org.junit.Test;
 
+import static org.junit.Assert.assertTrue;
+
 /**
  * Test cache performance for sliding window analysis - a common use case.
  */
@@ -61,7 +63,7 @@ public class MODWTSlidingWindowTest {
             double[][] coeffs = modwt.forwardMODWT(window, DECOMP_LEVELS);
             // Simulate some processing (e.g., feature extraction)
             double energy = calculateEnergy(coeffs[0]); // Level 1 energy
-            assert energy >= 0 : "Energy value should be non-negative";
+            assertTrue("Energy value should be non-negative", energy >= 0);
         }
         
         long timeNoCache = System.nanoTime() - startNoCache;
