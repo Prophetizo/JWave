@@ -157,6 +157,9 @@ public class MODWTTransform extends WaveletTransform {
      * }</pre>
      */
     public double[][] forwardMODWT(double[] data, int maxLevel) {
+        if (maxLevel > 13) {
+            throw new IllegalArgumentException("Maximum decomposition level is 13, requested: " + maxLevel);
+        }
         int N = data.length;
         
         // Initialize cache if needed
@@ -272,6 +275,9 @@ public class MODWTTransform extends WaveletTransform {
         if (level < 0 || level > maxLevel)
             throw new JWaveFailure("MODWTTransform#forward - " +
                 "given level is out of range for given array");
+        if (level > 13)
+            throw new JWaveFailure("MODWTTransform#forward - " +
+                "maximum supported decomposition level is 13, requested: " + level);
         
         // Perform MODWT decomposition to specified level
         double[][] coeffs2D = forwardMODWT(arrTime, level);
@@ -385,8 +391,14 @@ public class MODWTTransform extends WaveletTransform {
     /**
      * Pre-computes filters for specified levels to avoid
      * computation during time-critical operations.
+     * 
+     * @param maxLevel The maximum decomposition level to pre-compute (1 ≤ maxLevel ≤ 13)
+     * @throws IllegalArgumentException if maxLevel exceeds 13
      */
     public void precomputeFilters(int maxLevel) {
+        if (maxLevel > 13) {
+            throw new IllegalArgumentException("Maximum decomposition level is 13, requested: " + maxLevel);
+        }
         initializeFilterCache();
         for (int j = 1; j <= maxLevel; j++) {
             getCachedGFilter(j);
@@ -419,7 +431,7 @@ public class MODWTTransform extends WaveletTransform {
      */
     private static double[] upsample(double[] filter, int level) {
         if (level <= 1) return filter;
-        if (level > 30) throw new IllegalArgumentException("Level too large for upsampling: " + level);
+        if (level > 13) throw new IllegalArgumentException("Level too large for upsampling: " + level + " (maximum supported level is 13)");
         int gap = (1 << (level - 1)) - 1;
         int newLength = filter.length + (filter.length - 1) * gap;
         if (newLength < 0 || newLength < filter.length) throw new IllegalArgumentException("Upsampling would result in array too large");
