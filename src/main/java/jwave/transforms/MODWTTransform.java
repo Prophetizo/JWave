@@ -173,9 +173,22 @@ public class MODWTTransform extends WaveletTransform {
      * }</pre>
      */
     public double[][] forwardMODWT(double[] data, int maxLevel) {
+        if (maxLevel < 1) {
+            throw new IllegalArgumentException("MODWTTransform#forwardMODWT - " +
+                "decomposition level must be at least 1, requested: " + maxLevel);
+        }
         if (maxLevel > MAX_DECOMPOSITION_LEVEL) {
-            throw new IllegalArgumentException("Maximum decomposition level is " + 
-                MAX_DECOMPOSITION_LEVEL + ", requested: " + maxLevel);
+            throw new IllegalArgumentException("MODWTTransform#forwardMODWT - " +
+                "maximum supported decomposition level is " + MAX_DECOMPOSITION_LEVEL + 
+                ", requested: " + maxLevel);
+        }
+        if (data == null || data.length == 0) {
+            // Return the expected structure but with empty arrays
+            double[][] emptyResult = new double[maxLevel + 1][];
+            for (int i = 0; i <= maxLevel; i++) {
+                emptyResult[i] = new double[0];
+            }
+            return emptyResult;
         }
         int N = data.length;
         
@@ -411,12 +424,17 @@ public class MODWTTransform extends WaveletTransform {
      * computation during time-critical operations.
      * 
      * @param maxLevel The maximum decomposition level to pre-compute (1 ≤ maxLevel ≤ MAX_DECOMPOSITION_LEVEL)
-     * @throws IllegalArgumentException if maxLevel exceeds MAX_DECOMPOSITION_LEVEL
+     * @throws IllegalArgumentException if maxLevel is out of valid range
      */
     public void precomputeFilters(int maxLevel) {
+        if (maxLevel < 1) {
+            throw new IllegalArgumentException("MODWTTransform#precomputeFilters - " +
+                "decomposition level must be at least 1, requested: " + maxLevel);
+        }
         if (maxLevel > MAX_DECOMPOSITION_LEVEL) {
-            throw new IllegalArgumentException("Maximum decomposition level is " + 
-                MAX_DECOMPOSITION_LEVEL + ", requested: " + maxLevel);
+            throw new IllegalArgumentException("MODWTTransform#precomputeFilters - " +
+                "maximum supported decomposition level is " + MAX_DECOMPOSITION_LEVEL + 
+                ", requested: " + maxLevel);
         }
         initializeFilterCache();
         for (int j = 1; j <= maxLevel; j++) {
@@ -450,7 +468,7 @@ public class MODWTTransform extends WaveletTransform {
      */
     private static double[] upsample(double[] filter, int level) {
         if (level <= 1) return filter;
-        if (level > MAX_DECOMPOSITION_LEVEL) throw new IllegalArgumentException("Level too large for upsampling: " + level + " (maximum supported level is " + MAX_DECOMPOSITION_LEVEL + ")");
+        if (level > MAX_DECOMPOSITION_LEVEL) throw new IllegalArgumentException("MODWTTransform#upsample - maximum supported decomposition level is " + MAX_DECOMPOSITION_LEVEL + ", requested: " + level);
         int gap = (1 << (level - 1)) - 1;
         int newLength = filter.length + (filter.length - 1) * gap;
         if (newLength < 0 || newLength < filter.length) throw new IllegalArgumentException("Upsampling would result in array too large");

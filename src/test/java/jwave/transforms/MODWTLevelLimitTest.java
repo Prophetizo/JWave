@@ -71,7 +71,7 @@ public class MODWTLevelLimitTest {
         try {
             double[] result = modwt.forward(signal, MAX_LEVEL);
             assertNotNull("Level " + MAX_LEVEL + " should succeed", result);
-        } catch (JWaveFailure e) {
+        } catch (IllegalArgumentException e) {
             fail("forward() with level " + MAX_LEVEL + " should not throw exception: " + e.getMessage());
         }
         
@@ -79,7 +79,7 @@ public class MODWTLevelLimitTest {
         try {
             modwt.forward(signal, MAX_LEVEL + 1);
             fail("forward() with level " + (MAX_LEVEL + 1) + " should throw exception");
-        } catch (JWaveFailure e) {
+        } catch (JWaveException e) {
             assertTrue("Exception message should mention level " + MAX_LEVEL, 
                       e.getMessage().contains(String.valueOf(MAX_LEVEL)));
         }
