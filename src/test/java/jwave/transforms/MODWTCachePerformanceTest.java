@@ -44,6 +44,7 @@ public class MODWTCachePerformanceTest {
             System.out.println("\nWavelet: " + waveletName);
             System.out.println("Size\tLevels\tNo Cache(ms)\tWith Cache(ms)\tImprovement");
             System.out.println("----\t------\t-----------\t-------------\t-----------");
+            System.out.println("(No Cache: clears cache each iteration, With Cache: pre-computed filters)");
             
             for (int size : signalSizes) {
                 double[] signal = generateTestSignal(size);
@@ -63,8 +64,9 @@ public class MODWTCachePerformanceTest {
                 long timeNoCache = System.nanoTime() - startNoCache;
                 double avgTimeNoCache = (timeNoCache / 1e6) / TEST_ITERATIONS;
                 
-                // Test with cache
+                // Test with cache (pre-compute filters before timing)
                 modwt.clearFilterCache();
+                modwt.precomputeFilters(maxLevel); // Pre-populate cache
                 long startWithCache = System.nanoTime();
                 for (int i = 0; i < TEST_ITERATIONS; i++) {
                     modwt.forwardMODWT(signal, maxLevel);
