@@ -28,7 +28,7 @@ public class MODWTThreadSafetyTest {
         MODWTTransform modwt = new MODWTTransform(new Daubechies4());
         
         // Test signal
-        double[] signal = generateTestSignal(256);
+        double[] signal = TestSignalGenerator.generateSimpleSignal(256);
         int levels = 4;
         
         // Reference result (single-threaded)
@@ -111,7 +111,7 @@ public class MODWTThreadSafetyTest {
         MODWTTransform modwtHaar = new MODWTTransform(new Haar1());
         MODWTTransform modwtDb4 = new MODWTTransform(new Daubechies4());
         
-        double[] signal = generateTestSignal(128);
+        double[] signal = TestSignalGenerator.generateSimpleSignal(128);
         
         ExecutorService executor = Executors.newFixedThreadPool(4);
         CountDownLatch latch = new CountDownLatch(4);
@@ -149,12 +149,4 @@ public class MODWTThreadSafetyTest {
         System.out.println("Successfully completed " + successCount.get() + " concurrent operations");
     }
     
-    private double[] generateTestSignal(int length) {
-        double[] signal = new double[length];
-        for (int i = 0; i < length; i++) {
-            signal[i] = Math.sin(2 * Math.PI * i / 32.0) + 
-                       0.5 * Math.sin(2 * Math.PI * i / 8.0);
-        }
-        return signal;
-    }
 }

@@ -19,7 +19,7 @@ public class MODWTInverseTest {
     @Test
     public void testPerfectReconstructionHaar() {
         MODWTTransform modwt = new MODWTTransform(new Haar1());
-        double[] signal = generateTestSignal(256);
+        double[] signal = TestSignalGenerator.generateCleanSignal(256);
         
         // Forward transform
         double[][] coeffs = modwt.forwardMODWT(signal, 4);
@@ -36,7 +36,7 @@ public class MODWTInverseTest {
     @Test
     public void testPerfectReconstructionDaubechies4() {
         MODWTTransform modwt = new MODWTTransform(new Daubechies4());
-        double[] signal = generateTestSignal(128);
+        double[] signal = TestSignalGenerator.generateCleanSignal(128);
         
         // Forward transform
         double[][] coeffs = modwt.forwardMODWT(signal, 3);
@@ -62,7 +62,7 @@ public class MODWTInverseTest {
     private void testWaveletReconstruction(jwave.transforms.wavelets.Wavelet wavelet, 
                                           int signalLength, int levels) {
         MODWTTransform modwt = new MODWTTransform(wavelet);
-        double[] signal = generateTestSignal(signalLength);
+        double[] signal = TestSignalGenerator.generateCleanSignal(signalLength);
         
         double[][] coeffs = modwt.forwardMODWT(signal, levels);
         double[] reconstructed = modwt.inverseMODWT(coeffs);
@@ -78,7 +78,7 @@ public class MODWTInverseTest {
         
         int[] testLengths = {100, 288, 500, 1000};
         for (int length : testLengths) {
-            double[] signal = generateTestSignal(length);
+            double[] signal = TestSignalGenerator.generateCleanSignal(length);
             double[][] coeffs = modwt.forwardMODWT(signal, 3);
             double[] reconstructed = modwt.inverseMODWT(coeffs);
             
@@ -93,7 +93,7 @@ public class MODWTInverseTest {
     @Test
     public void testEnergyConservation() {
         MODWTTransform modwt = new MODWTTransform(new Daubechies4());
-        double[] signal = generateTestSignal(256);
+        double[] signal = TestSignalGenerator.generateCleanSignal(256);
         
         // Calculate signal energy
         double signalEnergy = calculateEnergy(signal);
@@ -116,7 +116,7 @@ public class MODWTInverseTest {
     @Test
     public void testCoefficientModification() {
         MODWTTransform modwt = new MODWTTransform(new Haar1());
-        double[] signal = generateTestSignal(128);
+        double[] signal = TestSignalGenerator.generateCleanSignal(128);
         
         // Forward transform
         double[][] coeffs = modwt.forwardMODWT(signal, 3);
@@ -146,7 +146,7 @@ public class MODWTInverseTest {
     @Test
     public void testReverseMethodIntegration() {
         MODWTTransform modwt = new MODWTTransform(new Daubechies4());
-        double[] signal = generateTestSignal(64);
+        double[] signal = TestSignalGenerator.generateCleanSignal(64);
         
         // Forward transform - single level
         double[][] coeffs2D = modwt.forwardMODWT(signal, 1);
@@ -233,16 +233,6 @@ public class MODWTInverseTest {
 
     // Helper methods
     
-    private double[] generateTestSignal(int length) {
-        double[] signal = new double[length];
-        for (int i = 0; i < length; i++) {
-            // Combination of sinusoids
-            signal[i] = Math.sin(2 * Math.PI * i / 32.0) + 
-                       0.5 * Math.sin(2 * Math.PI * i / 8.0) +
-                       0.25 * Math.cos(2 * Math.PI * i / 64.0);
-        }
-        return signal;
-    }
     
     private double calculateMSE(double[] signal1, double[] signal2) {
         double sum = 0.0;

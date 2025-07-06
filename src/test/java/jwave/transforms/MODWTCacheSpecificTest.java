@@ -34,7 +34,7 @@ public class MODWTCacheSpecificTest {
     }
     
     private void testWaveletPerformance(String waveletName, MODWTTransform modwt) {
-        double[] signal = generateTestSignal(SIGNAL_LENGTH);
+        double[] signal = TestSignalGenerator.generateCompositeSignal(SIGNAL_LENGTH);
         
         System.out.println("\nWavelet: " + waveletName);
         System.out.println("Metric\t\t\tNo Cache\tWith Cache\tImprovement");
@@ -174,13 +174,4 @@ public class MODWTCacheSpecificTest {
         return upsampled;
     }
     
-    private double[] generateTestSignal(int length) {
-        double[] signal = new double[length];
-        for (int i = 0; i < length; i++) {
-            signal[i] = Math.sin(2 * Math.PI * i / 32.0) + 
-                       0.5 * Math.sin(2 * Math.PI * i / 8.0) +
-                       0.1 * Math.random();
-        }
-        return signal;
-    }
 }

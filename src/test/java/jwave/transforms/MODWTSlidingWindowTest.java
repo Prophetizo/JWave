@@ -19,7 +19,7 @@ public class MODWTSlidingWindowTest {
         System.out.println("=== MODWT Sliding Window Analysis (512 samples, 8 levels) ===\n");
         
         // Generate a long signal
-        double[] longSignal = generateLongSignal(TOTAL_SIGNAL_LENGTH);
+        double[] longSignal = TestSignalGenerator.generateMultiFrequencySignal(TOTAL_SIGNAL_LENGTH);
         int numWindows = (TOTAL_SIGNAL_LENGTH - WINDOW_SIZE) / SLIDE_STEP + 1;
         
         System.out.println("Configuration:");
@@ -107,7 +107,7 @@ public class MODWTSlidingWindowTest {
     public void testRepeatedTransformsSameSignal() {
         System.out.println("\n=== Repeated Transforms on Same Signal (512 samples, 8 levels) ===\n");
         
-        double[] signal = generateTestSignal(WINDOW_SIZE);
+        double[] signal = TestSignalGenerator.generateCompositeSignal(WINDOW_SIZE);
         int numIterations = 1000;
         
         MODWTTransform modwtHaar = new MODWTTransform(new Haar1());
@@ -160,24 +160,4 @@ public class MODWTSlidingWindowTest {
         return energy;
     }
     
-    private double[] generateTestSignal(int length) {
-        double[] signal = new double[length];
-        for (int i = 0; i < length; i++) {
-            signal[i] = Math.sin(2 * Math.PI * i / 32.0) + 
-                       0.5 * Math.sin(2 * Math.PI * i / 8.0) +
-                       0.1 * Math.random();
-        }
-        return signal;
-    }
-    
-    private double[] generateLongSignal(int length) {
-        double[] signal = new double[length];
-        for (int i = 0; i < length; i++) {
-            signal[i] = Math.sin(2 * Math.PI * i / 32.0) + 
-                       0.5 * Math.sin(2 * Math.PI * i / 8.0) +
-                       0.25 * Math.sin(2 * Math.PI * i / 128.0) +
-                       0.1 * Math.random();
-        }
-        return signal;
-    }
 }

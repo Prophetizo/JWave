@@ -47,7 +47,7 @@ public class MODWTCachePerformanceTest {
             System.out.println("(No Cache: clears cache each iteration, With Cache: pre-computed filters)");
             
             for (int size : signalSizes) {
-                double[] signal = generateTestSignal(size);
+                double[] signal = TestSignalGenerator.generateCompositeSignal(size);
                 int maxLevel = (int)(Math.log(size) / Math.log(2)) - 2; // Use fewer levels
                 
                 // Warm-up
@@ -126,7 +126,7 @@ public class MODWTCachePerformanceTest {
         System.out.println("\n=== MODWT Pre-compute Filters Test ===\n");
         
         MODWTTransform modwt = new MODWTTransform(new Haar1());
-        double[] signal = generateTestSignal(1024);
+        double[] signal = TestSignalGenerator.generateCompositeSignal(1024);
         
         // Time with pre-computation
         modwt.clearFilterCache();
@@ -151,7 +151,7 @@ public class MODWTCachePerformanceTest {
         System.out.println("\n=== MODWT Cache Correctness Test ===\n");
         
         // Test that cached filters produce identical results
-        double[] signal = generateTestSignal(512);
+        double[] signal = TestSignalGenerator.generateCompositeSignal(512);
         
         // First transform (no cache)
         MODWTTransform modwt1 = new MODWTTransform(new Daubechies4());
@@ -181,13 +181,4 @@ public class MODWTCachePerformanceTest {
         System.out.println("Tested: no cache, lazy cache, and pre-computed cache");
     }
     
-    private double[] generateTestSignal(int length) {
-        double[] signal = new double[length];
-        for (int i = 0; i < length; i++) {
-            signal[i] = Math.sin(2 * Math.PI * i / 32.0) + 
-                       0.5 * Math.sin(2 * Math.PI * i / 8.0) +
-                       0.1 * Math.random();
-        }
-        return signal;
-    }
 }
