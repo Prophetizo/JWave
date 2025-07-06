@@ -5,6 +5,8 @@ import jwave.exceptions.JWaveException;
 import jwave.exceptions.JWaveFailure;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An implementation of the Maximal Overlap Discrete Wavelet Transform (MODWT)
@@ -100,6 +102,24 @@ import java.util.Arrays;
 public class MODWTTransform extends WaveletTransform {
 
     /**
+     * Maximum supported decomposition level.
+     * Set to 13 (a Fibonacci number) to balance flexibility with memory constraints.
+     * At level 13, filter sizes can reach ~77K coefficients for longer wavelets.
+     */
+    private static final int MAX_DECOMPOSITION_LEVEL = 13;
+
+    // Cache for upsampled filters, keyed by level
+    private transient Map<Integer, double[]> gFilterCache;
+    private transient Map<Integer, double[]> hFilterCache;
+    
+    // Base MODWT filters (computed once from wavelet)
+    private transient double[] g_modwt_base;
+    private transient double[] h_modwt_base;
+    
+    // Flag to track if cache is valid (volatile for thread visibility)
+    private transient volatile boolean cacheInitialized = false;
+
+    /**
      * Constructor for the MODWTTransform.
      * 
      * @param wavelet The mother wavelet to use for the transform. Common choices include:
@@ -109,6 +129,15 @@ public class MODWTTransform extends WaveletTransform {
      */
     public MODWTTransform(Wavelet wavelet) {
         super(wavelet);
+    }
+    
+    /**
+     * Returns the maximum supported decomposition level.
+     * 
+     * @return The maximum decomposition level (currently 13)
+     */
+    public static int getMaxDecompositionLevel() {
+        return MAX_DECOMPOSITION_LEVEL;
     }
 
     /**
@@ -144,27 +173,35 @@ public class MODWTTransform extends WaveletTransform {
      * }</pre>
      */
     public double[][] forwardMODWT(double[] data, int maxLevel) {
-        int N = data.length;
-
-        double[] g_dwt = Arrays.copyOf(_wavelet.getScalingDeComposition(), _wavelet.getScalingDeComposition().length);
-        double[] h_dwt = Arrays.copyOf(_wavelet.getWaveletDeComposition(), _wavelet.getWaveletDeComposition().length);
-        normalize(g_dwt);
-        normalize(h_dwt);
-
-        double scaleFactor = Math.sqrt(2.0);
-        double[] g_modwt = new double[g_dwt.length];
-        double[] h_modwt = new double[h_dwt.length];
-        for (int i = 0; i < g_dwt.length; i++) {
-            g_modwt[i] = g_dwt[i] / scaleFactor;
-            h_modwt[i] = h_dwt[i] / scaleFactor;
+        if (maxLevel < 1) {
+            throw new IllegalArgumentException("MODWTTransform#forwardMODWT - " +
+                "decomposition level must be at least 1, requested: " + maxLevel);
         }
+        if (maxLevel > MAX_DECOMPOSITION_LEVEL) {
+            throw new IllegalArgumentException("MODWTTransform#forwardMODWT - " +
+                "maximum supported decomposition level is " + MAX_DECOMPOSITION_LEVEL + 
+                ", requested: " + maxLevel);
+        }
+        if (data == null || data.length == 0) {
+            // Return the expected structure but with empty arrays
+            double[][] emptyResult = new double[maxLevel + 1][];
+            for (int i = 0; i <= maxLevel; i++) {
+                emptyResult[i] = new double[0];
+            }
+            return emptyResult;
+        }
+        int N = data.length;
+        
+        // Initialize cache if needed
+        initializeFilterCache();
 
         double[][] modwtCoeffs = new double[maxLevel + 1][N];
         double[] vCurrent = Arrays.copyOf(data, N);
 
         for (int j = 1; j <= maxLevel; j++) {
-            double[] gUpsampled = upsample(g_modwt, j);
-            double[] hUpsampled = upsample(h_modwt, j);
+            // Use cached filters instead of creating new ones
+            double[] gUpsampled = getCachedGFilter(j);
+            double[] hUpsampled = getCachedHFilter(j);
 
             double[] wNext = circularConvolve(vCurrent, hUpsampled);
             double[] vNext = circularConvolve(vCurrent, gUpsampled);
@@ -214,29 +251,22 @@ public class MODWTTransform extends WaveletTransform {
         }
 
         int maxLevel = coefficients.length - 1;
-        if (maxLevel < 0) return new double[0];
+        if (maxLevel <= 0) {
+            // Need at least level 1 (2 arrays: W_1 and V_1)
+            return new double[0];
+        }
 
         int N = coefficients[0].length;
-
-        // *** FINAL REFINEMENT: The inverse transform uses the DECOMPOSITION filters with the adjoint operator. ***
-        double[] g_dwt = _wavelet.getScalingDeComposition();
-        double[] h_dwt = _wavelet.getWaveletDeComposition();
-        normalize(g_dwt);
-        normalize(h_dwt);
-
-        double scaleFactor = Math.sqrt(2.0);
-        double[] g_modwt = new double[g_dwt.length];
-        double[] h_modwt = new double[h_dwt.length];
-        for (int i = 0; i < g_dwt.length; i++) {
-            g_modwt[i] = g_dwt[i] / scaleFactor;
-            h_modwt[i] = h_dwt[i] / scaleFactor;
-        }
+        
+        // Initialize cache if needed
+        initializeFilterCache();
 
         double[] vCurrent = Arrays.copyOf(coefficients[maxLevel], N);
 
         for (int j = maxLevel; j >= 1; j--) {
-            double[] gUpsampled = upsample(g_modwt, j);
-            double[] hUpsampled = upsample(h_modwt, j);
+            // Use cached filters instead of creating new ones
+            double[] gUpsampled = getCachedGFilter(j);
+            double[] hUpsampled = getCachedHFilter(j);
 
             double[] wCurrent = coefficients[j - 1];
 
@@ -278,6 +308,10 @@ public class MODWTTransform extends WaveletTransform {
         if (level < 0 || level > maxLevel)
             throw new JWaveFailure("MODWTTransform#forward - " +
                 "given level is out of range for given array");
+        if (level > MAX_DECOMPOSITION_LEVEL)
+            throw new JWaveFailure("MODWTTransform#forward - " +
+                "maximum supported decomposition level is " + MAX_DECOMPOSITION_LEVEL + 
+                ", requested: " + level);
         
         // Perform MODWT decomposition to specified level
         double[][] coeffs2D = forwardMODWT(arrTime, level);
@@ -320,6 +354,97 @@ public class MODWTTransform extends WaveletTransform {
     }
 
     // --- Helper and Overridden Methods ---
+    
+    /**
+     * Initializes the filter cache if not already initialized.
+     * Computes the base MODWT filters from the wavelet coefficients.
+     * Thread-safe through double-checked locking pattern.
+     */
+    private void initializeFilterCache() {
+        if (!cacheInitialized || g_modwt_base == null) {
+            synchronized (this) {
+                // Double-check inside synchronized block
+                if (!cacheInitialized || g_modwt_base == null) {
+                    // Compute base MODWT filters
+                    double[] g_dwt = Arrays.copyOf(_wavelet.getScalingDeComposition(), 
+                                                   _wavelet.getScalingDeComposition().length);
+                    double[] h_dwt = Arrays.copyOf(_wavelet.getWaveletDeComposition(), 
+                                                   _wavelet.getWaveletDeComposition().length);
+                    normalize(g_dwt);
+                    normalize(h_dwt);
+                    
+                    double scaleFactor = Math.sqrt(2.0);
+                    g_modwt_base = new double[g_dwt.length];
+                    h_modwt_base = new double[h_dwt.length];
+                    for (int i = 0; i < g_dwt.length; i++) {
+                        g_modwt_base[i] = g_dwt[i] / scaleFactor;
+                        h_modwt_base[i] = h_dwt[i] / scaleFactor;
+                    }
+                    
+                    // Initialize cache maps with ConcurrentHashMap for thread safety
+                    gFilterCache = new ConcurrentHashMap<>();
+                    hFilterCache = new ConcurrentHashMap<>();
+                    cacheInitialized = true;
+                }
+            }
+        }
+    }
+    
+    /**
+     * Gets the cached upsampled G filter for the specified level.
+     * Creates and caches it if not already present.
+     */
+    private double[] getCachedGFilter(int level) {
+        initializeFilterCache();
+        return gFilterCache.computeIfAbsent(level, k -> upsample(g_modwt_base, k));
+    }
+    
+    /**
+     * Gets the cached upsampled H filter for the specified level.
+     * Creates and caches it if not already present.
+     */
+    private double[] getCachedHFilter(int level) {
+        initializeFilterCache();
+        return hFilterCache.computeIfAbsent(level, k -> upsample(h_modwt_base, k));
+    }
+    
+    /**
+     * Clears the filter cache. Call this if memory is a concern
+     * or before changing wavelets. Thread-safe.
+     */
+    public void clearFilterCache() {
+        synchronized (this) {
+            if (gFilterCache != null) gFilterCache.clear();
+            if (hFilterCache != null) hFilterCache.clear();
+            // Don't set base filters to null - they can be reused
+            // Just mark as uninitialized so they'll be recomputed if needed
+            cacheInitialized = false;
+        }
+    }
+    
+    /**
+     * Pre-computes filters for specified levels to avoid
+     * computation during time-critical operations.
+     * 
+     * @param maxLevel The maximum decomposition level to pre-compute (1 ≤ maxLevel ≤ MAX_DECOMPOSITION_LEVEL)
+     * @throws IllegalArgumentException if maxLevel is out of valid range
+     */
+    public void precomputeFilters(int maxLevel) {
+        if (maxLevel < 1) {
+            throw new IllegalArgumentException("MODWTTransform#precomputeFilters - " +
+                "decomposition level must be at least 1, requested: " + maxLevel);
+        }
+        if (maxLevel > MAX_DECOMPOSITION_LEVEL) {
+            throw new IllegalArgumentException("MODWTTransform#precomputeFilters - " +
+                "maximum supported decomposition level is " + MAX_DECOMPOSITION_LEVEL + 
+                ", requested: " + maxLevel);
+        }
+        initializeFilterCache();
+        for (int j = 1; j <= maxLevel; j++) {
+            getCachedGFilter(j);
+            getCachedHFilter(j);
+        }
+    }
 
     /**
      * Normalizes a filter to have unit energy (L2 norm = 1).
@@ -346,7 +471,7 @@ public class MODWTTransform extends WaveletTransform {
      */
     private static double[] upsample(double[] filter, int level) {
         if (level <= 1) return filter;
-        if (level > 30) throw new IllegalArgumentException("Level too large for upsampling: " + level);
+        if (level > MAX_DECOMPOSITION_LEVEL) throw new IllegalArgumentException("MODWTTransform#upsample - maximum supported decomposition level is " + MAX_DECOMPOSITION_LEVEL + ", requested: " + level);
         int gap = (1 << (level - 1)) - 1;
         int newLength = filter.length + (filter.length - 1) * gap;
         if (newLength < 0 || newLength < filter.length) throw new IllegalArgumentException("Upsampling would result in array too large");
