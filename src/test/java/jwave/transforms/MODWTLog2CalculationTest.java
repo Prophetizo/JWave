@@ -142,7 +142,7 @@ public class MODWTLog2CalculationTest {
         long timeFloat = System.nanoTime() - startFloat;
         
         double speedup = (double) timeFloat / timeInteger;
-        System.out.println("Integer-based log2 is " + String.format("%.1f", speedup) + "x faster than floating-point");
+        LOGGER.info("Integer-based log2 is " + String.format("%.1f", speedup) + "x faster than floating-point");
         
         // Integer approach should be significantly faster
         assertTrue("Integer-based approach should be faster", timeInteger < timeFloat);
