@@ -251,7 +251,10 @@ public class MODWTTransform extends WaveletTransform {
         }
 
         int maxLevel = coefficients.length - 1;
-        if (maxLevel < 0) return new double[0];
+        if (maxLevel <= 0) {
+            // Need at least level 1 (2 arrays: W_1 and V_1)
+            return new double[0];
+        }
 
         int N = coefficients[0].length;
         
