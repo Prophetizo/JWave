@@ -302,4 +302,30 @@ public abstract class Wavelet {
 
   } // reverse
 
+  /**
+   * Get the wavelet (detail) filter coefficients.
+   * These are the high-pass filter coefficients used in decomposition.
+   * @return Array of wavelet filter coefficients
+   */
+  public double[] getWaveletCoefficients() {
+    return getWaveletDeComposition();
+  }
+
+  /**
+   * Get the scaling (approximation) filter coefficients.
+   * These are the low-pass filter coefficients used in decomposition.
+   * @return Array of scaling filter coefficients
+   */
+  public double[] getScalingCoefficients() {
+    return getScalingDeComposition();
+  }
+
+  /**
+   * Get the filter length (number of coefficients).
+   * @return The length of the wavelet/scaling filters
+   */
+  public int getFilterLength() {
+    return getMotherWavelength();
+  }
+
 } // Wavelet
