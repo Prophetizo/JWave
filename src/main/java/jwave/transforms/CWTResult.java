@@ -106,9 +106,9 @@ public class CWTResult {
   }
 
   /**
-   * Get the phase of the CWT coefficients.
+   * Get the phase of the CWT coefficients in radians.
    * 
-   * @return 2D array of phase values [scale][time]
+   * @return 2D array of phase values in radians [scale][time]
    */
   public double[][] getPhase() {
     int nScales = _coefficients.length;
@@ -117,6 +117,7 @@ public class CWTResult {
     
     for (int i = 0; i < nScales; i++) {
       for (int j = 0; j < nTime; j++) {
+        // Convert from degrees (returned by getPhi()) to radians
         phase[i][j] = _coefficients[i][j].getPhi() * Math.PI / 180.0;
       }
     }
