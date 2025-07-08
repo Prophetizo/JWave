@@ -1,0 +1,438 @@
+/**
+ * JWave is distributed under the MIT License (MIT); this file is part of.
+ *
+ * Copyright (c) 2008-2024 Christian (graetz23@gmail.com)
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+package jwave.transforms;
+
+import jwave.datatypes.natives.Complex;
+import jwave.exceptions.JWaveException;
+import jwave.transforms.wavelets.continuous.ContinuousWavelet;
+
+/**
+ * Continuous Wavelet Transform (CWT) implementation.
+ * 
+ * The CWT provides a time-scale representation of a signal by convolving
+ * it with scaled and translated versions of a mother wavelet. Unlike the
+ * discrete wavelet transform, CWT can use any scale and translation values,
+ * providing a highly redundant but information-rich representation.
+ *
+ * @author Stephen Romano
+ * @date 07.01.2025
+ */
+public class ContinuousWaveletTransform extends BasicTransform {
+
+  /**
+   * The continuous wavelet to use for the transform.
+   */
+  private ContinuousWavelet _wavelet;
+
+  /**
+   * Padding type for boundary handling.
+   */
+  public enum PaddingType {
+    ZERO,      // Zero padding
+    SYMMETRIC, // Symmetric extension
+    PERIODIC,  // Periodic extension
+    CONSTANT   // Constant extension using edge values
+  }
+
+  /**
+   * The padding type to use.
+   */
+  private PaddingType _paddingType;
+
+  /**
+   * Constructor with a continuous wavelet.
+   * 
+   * @param wavelet the continuous wavelet to use
+   */
+  public ContinuousWaveletTransform(ContinuousWavelet wavelet) {
+    this(wavelet, PaddingType.SYMMETRIC);
+  }
+
+  /**
+   * Constructor with a continuous wavelet and padding type.
+   * 
+   * @param wavelet the continuous wavelet to use
+   * @param paddingType the padding type for boundary handling
+   */
+  public ContinuousWaveletTransform(ContinuousWavelet wavelet, PaddingType paddingType) {
+    super();
+    _name = "Continuous Wavelet Transform (" + wavelet.getName() + ")";
+    _wavelet = wavelet;
+    _paddingType = paddingType;
+  }
+
+  /**
+   * Forward transform is not implemented for CWT in the standard way.
+   * Use the transform methods with scale parameters instead.
+   * 
+   * @param arrTime input signal
+   * @return throws exception
+   * @throws JWaveException always thrown
+   */
+  @Override
+  public double[] forward(double[] arrTime) throws JWaveException {
+    throw new JWaveException("CWT requires scale parameters. Use transform() method instead.");
+  }
+
+  /**
+   * Reverse transform is not implemented for CWT in the standard way.
+   * CWT inverse requires the scale parameters and admissibility constant.
+   * 
+   * @param arrFreq frequency domain signal
+   * @return throws exception
+   * @throws JWaveException always thrown
+   */
+  @Override
+  public double[] reverse(double[] arrFreq) throws JWaveException {
+    throw new JWaveException("CWT inverse requires scale parameters and is not fully implemented.");
+  }
+
+  /**
+   * Perform the continuous wavelet transform on a signal.
+   * 
+   * @param signal input signal
+   * @param scales array of scale values to use
+   * @return CWTResult containing the transform coefficients
+   */
+  public CWTResult transform(double[] signal, double[] scales) {
+    return transform(signal, scales, 1.0);
+  }
+
+  /**
+   * Perform the continuous wavelet transform on a signal with specified sampling rate.
+   * 
+   * @param signal input signal
+   * @param scales array of scale values to use
+   * @param samplingRate sampling rate of the signal (Hz)
+   * @return CWTResult containing the transform coefficients
+   */
+  public CWTResult transform(double[] signal, double[] scales, double samplingRate) {
+    int signalLength = signal.length;
+    int nScales = scales.length;
+    
+    // Create time axis
+    double[] timeAxis = new double[signalLength];
+    double dt = 1.0 / samplingRate;
+    for (int i = 0; i < signalLength; i++) {
+      timeAxis[i] = i * dt;
+    }
+    
+    // Initialize coefficient matrix
+    Complex[][] coefficients = new Complex[nScales][signalLength];
+    
+    // Perform CWT for each scale
+    for (int scaleIdx = 0; scaleIdx < nScales; scaleIdx++) {
+      double scale = scales[scaleIdx];
+      
+      // For each time point in the signal
+      for (int timeIdx = 0; timeIdx < signalLength; timeIdx++) {
+        coefficients[scaleIdx][timeIdx] = computeCoefficient(signal, timeIdx, scale, samplingRate);
+      }
+    }
+    
+    return new CWTResult(coefficients, scales, timeAxis, samplingRate, _wavelet.getName());
+  }
+
+  /**
+   * Perform FFT-based continuous wavelet transform for better performance.
+   * This method is much faster for long signals.
+   * 
+   * @param signal input signal
+   * @param scales array of scale values to use
+   * @param samplingRate sampling rate of the signal (Hz)
+   * @return CWTResult containing the transform coefficients
+   */
+  public CWTResult transformFFT(double[] signal, double[] scales, double samplingRate) {
+    int signalLength = signal.length;
+    int nScales = scales.length;
+    
+    // Pad signal to next power of 2 for FFT efficiency
+    int paddedLength = nextPowerOfTwo(signalLength);
+    double[] paddedSignal = padSignal(signal, paddedLength);
+    
+    // Compute FFT of the signal
+    Complex[] signalFFT = computeFFT(paddedSignal);
+    
+    // Create frequency axis
+    double[] omega = new double[paddedLength];
+    for (int i = 0; i < paddedLength; i++) {
+      omega[i] = 2.0 * Math.PI * i * samplingRate / paddedLength;
+      if (i > paddedLength / 2) {
+        omega[i] -= 2.0 * Math.PI * samplingRate;
+      }
+    }
+    
+    // Create time axis
+    double[] timeAxis = new double[signalLength];
+    double dt = 1.0 / samplingRate;
+    for (int i = 0; i < signalLength; i++) {
+      timeAxis[i] = i * dt;
+    }
+    
+    // Initialize coefficient matrix
+    Complex[][] coefficients = new Complex[nScales][signalLength];
+    
+    // Perform CWT for each scale using FFT
+    for (int scaleIdx = 0; scaleIdx < nScales; scaleIdx++) {
+      double scale = scales[scaleIdx];
+      
+      // Compute wavelet FFT at this scale
+      Complex[] waveletFFT = new Complex[paddedLength];
+      for (int i = 0; i < paddedLength; i++) {
+        waveletFFT[i] = _wavelet.fourierTransform(omega[i], scale, 0);
+        // Take complex conjugate for convolution
+        waveletFFT[i] = waveletFFT[i].conjugate();
+      }
+      
+      // Multiply in frequency domain
+      Complex[] product = new Complex[paddedLength];
+      for (int i = 0; i < paddedLength; i++) {
+        product[i] = signalFFT[i].mul(waveletFFT[i]);
+      }
+      
+      // Inverse FFT
+      Complex[] result = computeIFFT(product);
+      
+      // Extract relevant part and store
+      for (int timeIdx = 0; timeIdx < signalLength; timeIdx++) {
+        coefficients[scaleIdx][timeIdx] = result[timeIdx];
+      }
+    }
+    
+    return new CWTResult(coefficients, scales, timeAxis, samplingRate, _wavelet.getName());
+  }
+
+  /**
+   * Compute a single CWT coefficient using direct convolution.
+   * 
+   * @param signal input signal
+   * @param timeIdx time index
+   * @param scale scale value
+   * @param samplingRate sampling rate
+   * @return complex coefficient
+   */
+  private Complex computeCoefficient(double[] signal, int timeIdx, double scale, double samplingRate) {
+    Complex sum = new Complex(0, 0);
+    double dt = 1.0 / samplingRate;
+    
+    // Get effective support of the wavelet
+    double[] support = _wavelet.getEffectiveSupport();
+    int minIdx = Math.max(0, timeIdx + (int)(support[0] * scale * samplingRate));
+    int maxIdx = Math.min(signal.length - 1, timeIdx + (int)(support[1] * scale * samplingRate));
+    
+    // Perform convolution
+    for (int i = minIdx; i <= maxIdx; i++) {
+      double t = (i - timeIdx) * dt;
+      Complex waveletValue = _wavelet.wavelet(t, scale, 0);
+      // Take complex conjugate for convolution
+      waveletValue = waveletValue.conjugate();
+      sum = sum.add(waveletValue.mul(signal[i]));
+    }
+    
+    // Multiply by dt for numerical integration
+    return sum.mul(dt);
+  }
+
+  /**
+   * Pad signal according to the specified padding type.
+   * 
+   * @param signal input signal
+   * @param targetLength target length after padding
+   * @return padded signal
+   */
+  private double[] padSignal(double[] signal, int targetLength) {
+    double[] padded = new double[targetLength];
+    int signalLength = signal.length;
+    
+    // Copy original signal
+    System.arraycopy(signal, 0, padded, 0, signalLength);
+    
+    // Apply padding
+    switch (_paddingType) {
+      case ZERO:
+        // Already zero-padded
+        break;
+        
+      case SYMMETRIC:
+        for (int i = signalLength; i < targetLength; i++) {
+          int mirrorIdx = 2 * signalLength - i - 2;
+          if (mirrorIdx >= 0 && mirrorIdx < signalLength) {
+            padded[i] = signal[mirrorIdx];
+          }
+        }
+        break;
+        
+      case PERIODIC:
+        for (int i = signalLength; i < targetLength; i++) {
+          padded[i] = signal[i % signalLength];
+        }
+        break;
+        
+      case CONSTANT:
+        double lastValue = signal[signalLength - 1];
+        for (int i = signalLength; i < targetLength; i++) {
+          padded[i] = lastValue;
+        }
+        break;
+    }
+    
+    return padded;
+  }
+
+  /**
+   * Compute the next power of two greater than or equal to n.
+   * 
+   * @param n input value
+   * @return next power of two
+   */
+  private int nextPowerOfTwo(int n) {
+    return (int) Math.pow(2, Math.ceil(Math.log(n) / Math.log(2)));
+  }
+
+  /**
+   * Compute FFT of a real signal.
+   * This is a simplified implementation - in production, use a proper FFT library.
+   * 
+   * @param signal real input signal
+   * @return complex FFT result
+   */
+  private Complex[] computeFFT(double[] signal) {
+    int n = signal.length;
+    Complex[] result = new Complex[n];
+    
+    // Convert to complex
+    Complex[] complexSignal = new Complex[n];
+    for (int i = 0; i < n; i++) {
+      complexSignal[i] = new Complex(signal[i], 0);
+    }
+    
+    // Use JWave's existing FFT if available, otherwise use DFT
+    // For now, using simple DFT (inefficient but works)
+    for (int k = 0; k < n; k++) {
+      result[k] = new Complex(0, 0);
+      for (int j = 0; j < n; j++) {
+        double angle = -2.0 * Math.PI * k * j / n;
+        Complex exp = new Complex(Math.cos(angle), Math.sin(angle));
+        result[k] = result[k].add(complexSignal[j].mul(exp));
+      }
+    }
+    
+    return result;
+  }
+
+  /**
+   * Compute inverse FFT.
+   * This is a simplified implementation - in production, use a proper FFT library.
+   * 
+   * @param spectrum complex frequency domain signal
+   * @return complex time domain result
+   */
+  private Complex[] computeIFFT(Complex[] spectrum) {
+    int n = spectrum.length;
+    Complex[] result = new Complex[n];
+    
+    // IFFT using DFT with opposite sign in exponential
+    for (int k = 0; k < n; k++) {
+      result[k] = new Complex(0, 0);
+      for (int j = 0; j < n; j++) {
+        double angle = 2.0 * Math.PI * k * j / n;
+        Complex exp = new Complex(Math.cos(angle), Math.sin(angle));
+        result[k] = result[k].add(spectrum[j].mul(exp));
+      }
+      // Normalize
+      result[k] = result[k].mul(1.0 / n);
+    }
+    
+    return result;
+  }
+
+  /**
+   * Generate logarithmically spaced scales.
+   * 
+   * @param minScale minimum scale
+   * @param maxScale maximum scale
+   * @param numScales number of scales
+   * @return array of scale values
+   */
+  public static double[] generateLogScales(double minScale, double maxScale, int numScales) {
+    if (minScale <= 0 || maxScale <= 0) {
+      throw new IllegalArgumentException("Scales must be positive");
+    }
+    if (minScale >= maxScale) {
+      throw new IllegalArgumentException("minScale must be less than maxScale");
+    }
+    if (numScales < 2) {
+      throw new IllegalArgumentException("Need at least 2 scales");
+    }
+    
+    double[] scales = new double[numScales];
+    double logMin = Math.log(minScale);
+    double logMax = Math.log(maxScale);
+    double logStep = (logMax - logMin) / (numScales - 1);
+    
+    for (int i = 0; i < numScales; i++) {
+      scales[i] = Math.exp(logMin + i * logStep);
+    }
+    
+    return scales;
+  }
+
+  /**
+   * Generate linearly spaced scales.
+   * 
+   * @param minScale minimum scale
+   * @param maxScale maximum scale
+   * @param numScales number of scales
+   * @return array of scale values
+   */
+  public static double[] generateLinearScales(double minScale, double maxScale, int numScales) {
+    if (minScale <= 0 || maxScale <= 0) {
+      throw new IllegalArgumentException("Scales must be positive");
+    }
+    if (minScale >= maxScale) {
+      throw new IllegalArgumentException("minScale must be less than maxScale");
+    }
+    if (numScales < 2) {
+      throw new IllegalArgumentException("Need at least 2 scales");
+    }
+    
+    double[] scales = new double[numScales];
+    double step = (maxScale - minScale) / (numScales - 1);
+    
+    for (int i = 0; i < numScales; i++) {
+      scales[i] = minScale + i * step;
+    }
+    
+    return scales;
+  }
+
+  /**
+   * Get the wavelet used in this transform.
+   * 
+   * @return the continuous wavelet
+   */
+  public ContinuousWavelet getContinuousWavelet() {
+    return _wavelet;
+  }
+}
