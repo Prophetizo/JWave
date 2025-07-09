@@ -309,15 +309,17 @@ public class ContinuousWaveletTransform extends BasicTransform {
   }
 
   /**
-   * Compute FFT of a real signal.
-   * This is a simplified implementation - in production, use a proper FFT library.
+   * Compute FFT of a real signal using JWave's DFT implementation.
+   * 
+   * Note: This currently uses JWave's O(n²) DFT implementation. For better
+   * performance with large signals, consider implementing or integrating a
+   * true O(n log n) FFT algorithm (e.g., Cooley-Tukey FFT).
    * 
    * @param signal real input signal
    * @return complex FFT result
    */
   private Complex[] computeFFT(double[] signal) {
     int n = signal.length;
-    Complex[] result = new Complex[n];
     
     // Convert to complex
     Complex[] complexSignal = new Complex[n];
@@ -325,44 +327,24 @@ public class ContinuousWaveletTransform extends BasicTransform {
       complexSignal[i] = new Complex(signal[i], 0);
     }
     
-    // Use JWave's existing FFT if available, otherwise use DFT
-    // For now, using simple DFT (inefficient but works)
-    for (int k = 0; k < n; k++) {
-      result[k] = new Complex(0, 0);
-      for (int j = 0; j < n; j++) {
-        double angle = -2.0 * Math.PI * k * j / n;
-        Complex exp = new Complex(Math.cos(angle), Math.sin(angle));
-        result[k] = result[k].add(complexSignal[j].mul(exp));
-      }
-    }
-    
-    return result;
+    // Use JWave's DiscreteFourierTransform (O(n²) complexity)
+    DiscreteFourierTransform dft = new DiscreteFourierTransform();
+    return dft.forward(complexSignal);
   }
 
   /**
-   * Compute inverse FFT.
-   * This is a simplified implementation - in production, use a proper FFT library.
+   * Compute inverse FFT using JWave's DFT implementation.
+   * 
+   * Note: This currently uses JWave's O(n²) inverse DFT. For better
+   * performance, a true O(n log n) IFFT should be implemented.
    * 
    * @param spectrum complex frequency domain signal
    * @return complex time domain result
    */
   private Complex[] computeIFFT(Complex[] spectrum) {
-    int n = spectrum.length;
-    Complex[] result = new Complex[n];
-    
-    // IFFT using DFT with opposite sign in exponential
-    for (int k = 0; k < n; k++) {
-      result[k] = new Complex(0, 0);
-      for (int j = 0; j < n; j++) {
-        double angle = 2.0 * Math.PI * k * j / n;
-        Complex exp = new Complex(Math.cos(angle), Math.sin(angle));
-        result[k] = result[k].add(spectrum[j].mul(exp));
-      }
-      // Normalize
-      result[k] = result[k].mul(1.0 / n);
-    }
-    
-    return result;
+    // Use JWave's DiscreteFourierTransform (O(n²) complexity)
+    DiscreteFourierTransform dft = new DiscreteFourierTransform();
+    return dft.reverse(spectrum);
   }
 
   /**
