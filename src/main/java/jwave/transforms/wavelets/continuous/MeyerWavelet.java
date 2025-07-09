@@ -139,12 +139,6 @@ public class MeyerWavelet extends ContinuousWavelet {
       value = Math.cos(Math.PI / 2.0 * transitionFunction(arg));
     }
     
-    // Apply phase factor for analytic signal property
-    // Meyer wavelet is real in time domain, so we make it symmetric in frequency
-    if (omega < 0) {
-      value = -value; // Odd symmetry for imaginary part
-    }
-    
     // Normalization
     value *= Math.sqrt(2.0 * Math.PI);
     

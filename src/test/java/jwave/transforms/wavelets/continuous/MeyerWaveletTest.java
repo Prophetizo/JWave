@@ -258,6 +258,22 @@ public class MeyerWaveletTest {
       assertEquals("Meyer wavelet should be symmetric in time", 
                    valuePos.getReal(), valueNeg.getReal(), DELTA);
     }
+    
+    // Fourier transform should also have even symmetry for real part
+    // since Meyer wavelet is real-valued in time domain
+    double[] freqPoints = {2.5, 3.0, 4.0, 5.0, 6.0};
+    
+    for (double omega : freqPoints) {
+      Complex ftPos = wavelet.fourierTransform(omega);
+      Complex ftNeg = wavelet.fourierTransform(-omega);
+      
+      assertEquals("Fourier transform should have even symmetry", 
+                   ftPos.getReal(), ftNeg.getReal(), DELTA);
+      assertEquals("Fourier transform should be real-valued", 
+                   0.0, ftPos.getImag(), DELTA);
+      assertEquals("Fourier transform should be real-valued", 
+                   0.0, ftNeg.getImag(), DELTA);
+    }
   }
 
   /**
