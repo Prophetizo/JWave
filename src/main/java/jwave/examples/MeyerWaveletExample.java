@@ -23,7 +23,6 @@
  */
 package jwave.examples;
 
-import jwave.Transform;
 import jwave.datatypes.natives.Complex;
 import jwave.transforms.ContinuousWaveletTransform;
 import jwave.transforms.CWTResult;
