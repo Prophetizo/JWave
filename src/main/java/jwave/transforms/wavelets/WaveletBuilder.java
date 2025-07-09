@@ -56,7 +56,7 @@ import jwave.transforms.wavelets.haar.Haar1Orthogonal;
 import jwave.transforms.wavelets.legendre.Legendre1;
 import jwave.transforms.wavelets.legendre.Legendre2;
 import jwave.transforms.wavelets.legendre.Legendre3;
-import jwave.transforms.wavelets.other.DiscreteMayer;
+import jwave.transforms.wavelets.other.DiscreteMeyer;
 import jwave.transforms.wavelets.symlets.Symlet10;
 import jwave.transforms.wavelets.symlets.Symlet11;
 import jwave.transforms.wavelets.symlets.Symlet12;
@@ -356,8 +356,8 @@ public class WaveletBuilder {
           wavelet = new BiOrthogonal68( );
           break;
 
-        case "Discrete Mayer":
-          wavelet = new DiscreteMayer( );
+        case "Discrete Meyer":
+          wavelet = new DiscreteMeyer( );
           break;
 
         case "Battle 23":
@@ -490,7 +490,7 @@ public class WaveletBuilder {
     // listWavelets.add( WaveletBuilder.create( "BiOrthogonal 4/4" ) ); // not passing JUnit due to lifting scheme
     // listWavelets.add( WaveletBuilder.create( "BiOrthogonal 5/5" ) ); // not passing JUnit due to lifting scheme
     // listWavelets.add( WaveletBuilder.create( "BiOrthogonal 6/8" ) ); // not passing JUnit due to lifting scheme
-    // listWavelets.add( WaveletBuilder.create( "Discrete Mayer" ) ); // not passing JUnit due to precision
+    // listWavelets.add( WaveletBuilder.create( "Discrete Meyer" ) ); // not passing JUnit due to precision
 
     int noOfWavelets = listWavelets.size( );
     Wavelet[ ] arrWavelets = new Wavelet[ noOfWavelets ];

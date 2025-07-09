@@ -17,7 +17,7 @@ import jwave.transforms.wavelets.haar.Haar1Orthogonal;
 import jwave.transforms.wavelets.legendre.Legendre1;
 import jwave.transforms.wavelets.legendre.Legendre2;
 import jwave.transforms.wavelets.legendre.Legendre3;
-import jwave.transforms.wavelets.other.DiscreteMayer;
+import jwave.transforms.wavelets.other.DiscreteMeyer;
 
 import org.junit.Test;
 
@@ -91,9 +91,9 @@ public class RoundingTest extends Base {
     System.out.println( "" );
 
     System.out
-        .println( "testRounding Discrete Mayer - 1000 transforms => rounding error: "
+        .println( "testRounding Discrete Meyer - 1000 transforms => rounding error: "
             + delta );
-    testRoundingFWT( arrTime, new DiscreteMayer( ), 1.e-2 );
+    testRoundingFWT( arrTime, new DiscreteMeyer( ), 1.e-2 );
     System.out.println( "" );
 
     //      System.out

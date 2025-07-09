@@ -26,13 +26,13 @@ package jwave.transforms.wavelets.other;
 import jwave.transforms.wavelets.Wavelet;
 
 /**
- * Discrete Mayer (FIR approximation) filter: symmetric, orthogonal
+ * Discrete Meyer (FIR approximation) filter: symmetric, orthogonal
  * (orthonormal), biorthogonal.
  * 
  * @author Christian (graetz23@gmail.com)
  * @date 16.02.2014 13:58:12
  */
-public class DiscreteMayer extends Wavelet {
+public class DiscreteMeyer extends Wavelet {
 
   /**
    * Already orthonormal coefficients taken from Filip Wasilewski's webpage
@@ -41,9 +41,9 @@ public class DiscreteMayer extends Wavelet {
    * @author Christian (graetz23@gmail.com)
    * @date 16.02.2014 13:58:12
    */
-  public DiscreteMayer( ) {
+  public DiscreteMeyer( ) {
 
-    _name = "Discrete Mayer"; // name of the wavelet
+    _name = "Discrete Meyer"; // name of the wavelet
 
     _transformWavelength = 2; // minimal wavelength of input signal
 
@@ -116,6 +116,6 @@ public class DiscreteMayer extends Wavelet {
 
     _buildOrthonormalSpace( );
 
-  } // DiscreteMayer
+  } // DiscreteMeyer
 
-} // DiscreteMayer
+} // DiscreteMeyer
