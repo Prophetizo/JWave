@@ -339,11 +339,9 @@ public class DOGWavelet extends ContinuousWavelet {
    */
   private double evaluateHermitePolynomial(double x) {
     double result = 0.0;
-    double xPower = 1.0;
     
-    for (int i = 0; i < _hermiteCoeffs.length; i++) {
-      result += _hermiteCoeffs[i] * xPower;
-      xPower *= x;
+    for (int i = _hermiteCoeffs.length - 1; i >= 0; i--) {
+      result = result * x + _hermiteCoeffs[i];
     }
     
     return result;
