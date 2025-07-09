@@ -116,7 +116,7 @@ public class MeyerWavelet extends ContinuousWavelet {
     
     // Meyer wavelet has compact support in frequency: [2π/3, 8π/3]
     if (absOmega < 2.0 * Math.PI / 3.0 || absOmega > 8.0 * Math.PI / 3.0) {
-      return new Complex(0, 0);
+      return new Complex(0.0, 0.0);
     }
     
     double value = 0.0;
