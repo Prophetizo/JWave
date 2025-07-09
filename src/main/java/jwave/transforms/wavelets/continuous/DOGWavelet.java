@@ -321,20 +321,9 @@ public class DOGWavelet extends ContinuousWavelet {
     // The normalization involves sqrt((2n-1)!! / (2^n * sqrt(pi) * sigma^(2n+1)))
     // where (2n-1)!! is the double factorial
     
-    // For specific cases:
-    // n=1: norm = 1 / (sqrt(2) * pi^(1/4) * sigma^(3/2))
-    // n=2: norm = 1 / (2 * sqrt(3) * pi^(1/4) * sigma^(5/2))
-    
-    double normConst;
-    if (n == 1) {
-      normConst = 1.0 / (Math.sqrt(2.0) * Math.pow(Math.PI, 0.25) * Math.pow(sigma, 1.5));
-    } else if (n == 2) {
-      normConst = 1.0 / (2.0 * Math.sqrt(3.0) * Math.pow(Math.PI, 0.25) * Math.pow(sigma, 2.5));
-    } else {
-      // General formula using double factorial
-      double doubleFact = doubleFactorial(2 * n - 1);
-      normConst = Math.sqrt(doubleFact / (Math.pow(2, n) * Math.sqrt(Math.PI) * Math.pow(sigma, 2*n + 1)));
-    }
+    // General formula using double factorial
+    double doubleFact = doubleFactorial(2 * n - 1);
+    double normConst = Math.sqrt(doubleFact / (Math.pow(2, n) * Math.sqrt(Math.PI) * Math.pow(sigma, 2*n + 1)));
     
     return normConst;
   }
