@@ -295,83 +295,40 @@ public class DOGWaveletTest {
     }
 
     /**
-     * Test standard factory method with enum.
+     * Test standard factory method.
      */
     @Test
-    public void testStandardFactoryWithEnum() {
+    public void testStandardFactory() {
         // Test edge detector
-        DOGWavelet edge = DOGWavelet.createStandard(DOGWavelet.Type.EDGE, 1.0);
+        DOGWavelet edge = DOGWavelet.createStandard(DOGWavelet.WaveletType.EDGE, 1.0);
         assertEquals("Edge detector should be n=1", 1, edge.getDerivativeOrder());
         
         // Test Mexican Hat
-        DOGWavelet mexican = DOGWavelet.createStandard(DOGWavelet.Type.MEXICAN_HAT, 1.0);
+        DOGWavelet mexican = DOGWavelet.createStandard(DOGWavelet.WaveletType.MEXICAN_HAT, 1.0);
         assertEquals("Mexican Hat should be n=2", 2, mexican.getDerivativeOrder());
         assertTrue("Should identify as Mexican Hat", mexican.isMexicanHat());
         
         // Test Ricker (alias for Mexican Hat)
-        DOGWavelet ricker = DOGWavelet.createStandard(DOGWavelet.Type.RICKER, 1.0);
+        DOGWavelet ricker = DOGWavelet.createStandard(DOGWavelet.WaveletType.RICKER, 1.0);
         assertEquals("Ricker should be n=2", 2, ricker.getDerivativeOrder());
         
         // Test zero crossing
-        DOGWavelet zero = DOGWavelet.createStandard(DOGWavelet.Type.ZERO_CROSSING, 1.0);
+        DOGWavelet zero = DOGWavelet.createStandard(DOGWavelet.WaveletType.ZERO_CROSSING, 1.0);
         assertEquals("Zero crossing should be n=3", 3, zero.getDerivativeOrder());
         
         // Test ridge
-        DOGWavelet ridge = DOGWavelet.createStandard(DOGWavelet.Type.RIDGE, 1.0);
+        DOGWavelet ridge = DOGWavelet.createStandard(DOGWavelet.WaveletType.RIDGE, 1.0);
         assertEquals("Ridge should be n=4", 4, ridge.getDerivativeOrder());
         
         // Test null type
         try {
-            DOGWavelet.createStandard((DOGWavelet.Type)null, 1.0);
+            DOGWavelet.createStandard((DOGWavelet.WaveletType)null, 1.0);
             fail("Should throw exception for null type");
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("cannot be null"));
         }
     }
 
-    /**
-     * Test standard factory method with strings (deprecated).
-     */
-    @Test
-    @SuppressWarnings("deprecation")
-    public void testStandardFactoryWithString() {
-        // Test edge detector
-        DOGWavelet edge = DOGWavelet.createStandard("edge", 1.0);
-        assertEquals("Edge detector should be n=1", 1, edge.getDerivativeOrder());
-        
-        // Test Mexican Hat
-        DOGWavelet mexican = DOGWavelet.createStandard("mexican_hat", 1.0);
-        assertEquals("Mexican Hat should be n=2", 2, mexican.getDerivativeOrder());
-        assertTrue("Should identify as Mexican Hat", mexican.isMexicanHat());
-        
-        // Test Ricker (alias for Mexican Hat)
-        DOGWavelet ricker = DOGWavelet.createStandard("ricker", 1.0);
-        assertEquals("Ricker should be n=2", 2, ricker.getDerivativeOrder());
-        
-        // Test zero crossing
-        DOGWavelet zero = DOGWavelet.createStandard("zero_crossing", 1.0);
-        assertEquals("Zero crossing should be n=3", 3, zero.getDerivativeOrder());
-        
-        // Test ridge
-        DOGWavelet ridge = DOGWavelet.createStandard("ridge", 1.0);
-        assertEquals("Ridge should be n=4", 4, ridge.getDerivativeOrder());
-        
-        // Test invalid type
-        try {
-            DOGWavelet.createStandard("invalid", 1.0);
-            fail("Should throw exception for invalid type");
-        } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("Unknown"));
-        }
-        
-        // Test null type
-        try {
-            DOGWavelet.createStandard((String)null, 1.0);
-            fail("Should throw exception for null type");
-        } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("cannot be null"));
-        }
-    }
 
     /**
      * Test DOG wavelet in CWT context.

@@ -112,7 +112,7 @@ public class DOGWaveletExample {
         }
         
         // Use DOG n=1 for edge detection
-        DOGWavelet edgeDetector = DOGWavelet.createStandard(DOGWavelet.Type.EDGE, 2.0);
+        DOGWavelet edgeDetector = DOGWavelet.createStandard(DOGWavelet.WaveletType.EDGE, 2.0);
         ContinuousWaveletTransform cwt = new ContinuousWaveletTransform(edgeDetector);
         
         // Single scale analysis
@@ -224,12 +224,12 @@ public class DOGWaveletExample {
         }
         
         // Standard DOG wavelets
-        DOGWavelet.Type[] types = {DOGWavelet.Type.EDGE, DOGWavelet.Type.MEXICAN_HAT, 
-                                  DOGWavelet.Type.ZERO_CROSSING, DOGWavelet.Type.RIDGE};
+        DOGWavelet.WaveletType[] types = {DOGWavelet.WaveletType.EDGE, DOGWavelet.WaveletType.MEXICAN_HAT,
+                                  DOGWavelet.WaveletType.ZERO_CROSSING, DOGWavelet.WaveletType.RIDGE};
         
         System.out.println("\nFeature detection with standard DOG wavelets:");
         
-        for (DOGWavelet.Type type : types) {
+        for (DOGWavelet.WaveletType type : types) {
             DOGWavelet dog = DOGWavelet.createStandard(type, 2.0);
             ContinuousWaveletTransform cwt = new ContinuousWaveletTransform(dog);
             
