@@ -23,6 +23,7 @@ package jwave.transforms;
 
 import static org.junit.Assert.*;
 import org.junit.Test;
+import jwave.utils.MathUtils;
 
 /**
  * Test to verify nextPowerOfTwo implementations.
@@ -34,33 +35,58 @@ public class NextPowerOfTwoTest {
     
     @Test
     public void testNextPowerOfTwo() {
-        // Test the bit-twiddling approach
-        assertEquals(1, nextPowerOfTwo(0));
-        assertEquals(1, nextPowerOfTwo(1));
-        assertEquals(2, nextPowerOfTwo(2));
-        assertEquals(4, nextPowerOfTwo(3));
-        assertEquals(4, nextPowerOfTwo(4));
-        assertEquals(8, nextPowerOfTwo(5));
-        assertEquals(8, nextPowerOfTwo(6));
-        assertEquals(8, nextPowerOfTwo(7));
-        assertEquals(8, nextPowerOfTwo(8));
-        assertEquals(16, nextPowerOfTwo(9));
-        assertEquals(16, nextPowerOfTwo(15));
-        assertEquals(16, nextPowerOfTwo(16));
-        assertEquals(32, nextPowerOfTwo(17));
-        assertEquals(64, nextPowerOfTwo(63));
-        assertEquals(64, nextPowerOfTwo(64));
-        assertEquals(128, nextPowerOfTwo(65));
-        assertEquals(256, nextPowerOfTwo(255));
-        assertEquals(256, nextPowerOfTwo(256));
-        assertEquals(512, nextPowerOfTwo(257));
-        assertEquals(1024, nextPowerOfTwo(1000));
-        assertEquals(2048, nextPowerOfTwo(2000));
-        assertEquals(4096, nextPowerOfTwo(3000));
-        assertEquals(4096, nextPowerOfTwo(4096));
-        assertEquals(8192, nextPowerOfTwo(4097));
-        assertEquals(65536, nextPowerOfTwo(50000));
-        assertEquals(1048576, nextPowerOfTwo(1000000));
+        // Test the bit-twiddling approach from MathUtils
+        assertEquals(1, MathUtils.nextPowerOfTwo(0));
+        assertEquals(1, MathUtils.nextPowerOfTwo(1));
+        assertEquals(2, MathUtils.nextPowerOfTwo(2));
+        assertEquals(4, MathUtils.nextPowerOfTwo(3));
+        assertEquals(4, MathUtils.nextPowerOfTwo(4));
+        assertEquals(8, MathUtils.nextPowerOfTwo(5));
+        assertEquals(8, MathUtils.nextPowerOfTwo(6));
+        assertEquals(8, MathUtils.nextPowerOfTwo(7));
+        assertEquals(8, MathUtils.nextPowerOfTwo(8));
+        assertEquals(16, MathUtils.nextPowerOfTwo(9));
+        assertEquals(16, MathUtils.nextPowerOfTwo(15));
+        assertEquals(16, MathUtils.nextPowerOfTwo(16));
+        assertEquals(32, MathUtils.nextPowerOfTwo(17));
+        assertEquals(64, MathUtils.nextPowerOfTwo(63));
+        assertEquals(64, MathUtils.nextPowerOfTwo(64));
+        assertEquals(128, MathUtils.nextPowerOfTwo(65));
+        assertEquals(256, MathUtils.nextPowerOfTwo(255));
+        assertEquals(256, MathUtils.nextPowerOfTwo(256));
+        assertEquals(512, MathUtils.nextPowerOfTwo(257));
+        assertEquals(1024, MathUtils.nextPowerOfTwo(1000));
+        assertEquals(2048, MathUtils.nextPowerOfTwo(2000));
+        assertEquals(4096, MathUtils.nextPowerOfTwo(3000));
+        assertEquals(4096, MathUtils.nextPowerOfTwo(4096));
+        assertEquals(8192, MathUtils.nextPowerOfTwo(4097));
+        assertEquals(65536, MathUtils.nextPowerOfTwo(50000));
+        assertEquals(1048576, MathUtils.nextPowerOfTwo(1000000));
+    }
+    
+    @Test
+    public void testIsPowerOfTwo() {
+        // Test isPowerOfTwo from MathUtils
+        assertFalse(MathUtils.isPowerOfTwo(0));
+        assertTrue(MathUtils.isPowerOfTwo(1));
+        assertTrue(MathUtils.isPowerOfTwo(2));
+        assertFalse(MathUtils.isPowerOfTwo(3));
+        assertTrue(MathUtils.isPowerOfTwo(4));
+        assertFalse(MathUtils.isPowerOfTwo(5));
+        assertFalse(MathUtils.isPowerOfTwo(6));
+        assertFalse(MathUtils.isPowerOfTwo(7));
+        assertTrue(MathUtils.isPowerOfTwo(8));
+        assertFalse(MathUtils.isPowerOfTwo(9));
+        assertTrue(MathUtils.isPowerOfTwo(16));
+        assertTrue(MathUtils.isPowerOfTwo(32));
+        assertTrue(MathUtils.isPowerOfTwo(64));
+        assertTrue(MathUtils.isPowerOfTwo(128));
+        assertTrue(MathUtils.isPowerOfTwo(256));
+        assertTrue(MathUtils.isPowerOfTwo(512));
+        assertTrue(MathUtils.isPowerOfTwo(1024));
+        assertFalse(MathUtils.isPowerOfTwo(1000));
+        assertFalse(MathUtils.isPowerOfTwo(-1));
+        assertFalse(MathUtils.isPowerOfTwo(-8));
     }
     
     @Test
@@ -77,7 +103,7 @@ public class NextPowerOfTwoTest {
         
         boolean allMatch = true;
         for (int n : testValues) {
-            int bitResult = nextPowerOfTwo(n);
+            int bitResult = MathUtils.nextPowerOfTwo(n);
             int floatResult = nextPowerOfTwoFloat(n);
             
             if (bitResult != floatResult) {
@@ -96,7 +122,7 @@ public class NextPowerOfTwoTest {
         // Performance comparison
         long startBit = System.nanoTime();
         for (int i = 0; i < 1000000; i++) {
-            nextPowerOfTwo(i % 100000);
+            MathUtils.nextPowerOfTwo(i % 100000);
         }
         long timeBit = System.nanoTime() - startBit;
         
@@ -110,11 +136,6 @@ public class NextPowerOfTwoTest {
         System.out.printf("Bit-twiddling: %.2f ms%n", timeBit / 1_000_000.0);
         System.out.printf("Floating-point: %.2f ms%n", timeFloat / 1_000_000.0);
         System.out.printf("Speedup: %.2fx%n", (double)timeFloat / timeBit);
-    }
-    
-    private int nextPowerOfTwo(int n) {
-        if (n <= 1) return 1;
-        return 1 << (32 - Integer.numberOfLeadingZeros(n - 1));
     }
     
     private int nextPowerOfTwoFloat(int n) {

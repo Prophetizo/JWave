@@ -24,6 +24,7 @@ package jwave.transforms;
 import jwave.datatypes.natives.Complex;
 import jwave.exceptions.JWaveException;
 import jwave.transforms.wavelets.continuous.ContinuousWavelet;
+import jwave.utils.MathUtils;
 
 /**
  * Continuous Wavelet Transform (CWT) implementation.
@@ -166,7 +167,7 @@ public class ContinuousWaveletTransform extends BasicTransform {
     int nScales = scales.length;
     
     // Pad signal to next power of 2 for FFT efficiency
-    int paddedLength = nextPowerOfTwo(signalLength);
+    int paddedLength = MathUtils.nextPowerOfTwo(signalLength);
     double[] paddedSignal = padSignal(signal, paddedLength);
     
     // Compute FFT of the signal
@@ -298,16 +299,6 @@ public class ContinuousWaveletTransform extends BasicTransform {
     return padded;
   }
 
-  /**
-   * Compute the next power of two greater than or equal to n.
-   * 
-   * @param n input value
-   * @return next power of two
-   */
-  private int nextPowerOfTwo(int n) {
-    if (n <= 1) return 1;
-    return 1 << (32 - Integer.numberOfLeadingZeros(n - 1));
-  }
 
   /**
    * Compute FFT of a real signal using JWave's Fast Fourier Transform.

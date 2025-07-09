@@ -23,6 +23,7 @@ package jwave.transforms;
 
 import jwave.datatypes.natives.Complex;
 import jwave.exceptions.JWaveException;
+import jwave.utils.MathUtils;
 
 /**
  * Fast Fourier Transform implementation supporting both power-of-2 
@@ -120,7 +121,7 @@ public class FastFourierTransform extends BasicTransform {
         }
         
         // Check if power of 2
-        if (isPowerOfTwo(n)) {
+        if (MathUtils.isPowerOfTwo(n)) {
             // Use Cooley-Tukey for power-of-2 lengths
             Complex[] result = new Complex[n];
             System.arraycopy(x, 0, result, 0, n);
@@ -150,7 +151,7 @@ public class FastFourierTransform extends BasicTransform {
         }
         
         // Check if power of 2
-        if (isPowerOfTwo(n)) {
+        if (MathUtils.isPowerOfTwo(n)) {
             // Use Cooley-Tukey for power-of-2 lengths
             Complex[] result = new Complex[n];
             System.arraycopy(x, 0, result, 0, n);
@@ -322,25 +323,6 @@ public class FastFourierTransform extends BasicTransform {
         return result;
     }
 
-    /**
-     * Checks if a number is a power of two.
-     * 
-     * @param n the number to check
-     * @return true if n is a power of two
-     */
-    private boolean isPowerOfTwo(int n) {
-        return n > 0 && (n & (n - 1)) == 0;
-    }
-
-    /**
-     * Computes the next power of two greater than or equal to n.
-     * 
-     * @param n input value
-     * @return next power of two
-     */
-    private int nextPowerOfTwo(int n) {
-        return 1 << (32 - Integer.numberOfLeadingZeros(n - 1));
-    }
 
     /**
      * Not used for FFT - throws exception.
