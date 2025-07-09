@@ -96,6 +96,13 @@ public class MeyerWavelet extends ContinuousWavelet {
    * Used to avoid division by zero in the sinc function evaluation.
    */
   private static final double ZERO_TIME_THRESHOLD = 1e-10;
+  
+  /**
+   * Effective support radius in time domain.
+   * The Meyer wavelet decays rapidly, and this value represents
+   * the time range where |ψ(t)| > 0.01 * max|ψ(t)|.
+   */
+  private static final double EFFECTIVE_SUPPORT_RADIUS = 15.0;
 
   /**
    * Default constructor.
@@ -229,7 +236,7 @@ public class MeyerWavelet extends ContinuousWavelet {
   public double[] getEffectiveSupport() {
     // Meyer wavelet has infinite support in time but decays rapidly
     // Effective support where |ψ(t)| > 0.01 * max|ψ(t)|
-    return new double[] { -15.0, 15.0 };
+    return new double[] { -EFFECTIVE_SUPPORT_RADIUS, EFFECTIVE_SUPPORT_RADIUS };
   }
 
   /**
