@@ -132,10 +132,10 @@ public class MeyerWavelet extends ContinuousWavelet {
       // Add correction terms for better approximation
       value += FIRST_HARMONIC_AMPLITUDE * 
                Math.sin(FIRST_HARMONIC_FREQ_MULT * TIME_DOMAIN_CENTER_FREQ * t) / 
-               (FIRST_HARMONIC_FREQ_MULT * t) * envelope;
+               (FIRST_HARMONIC_FREQ_MULT * TIME_DOMAIN_CENTER_FREQ * t) * envelope;
       value += SECOND_HARMONIC_AMPLITUDE * 
                Math.sin(SECOND_HARMONIC_FREQ_MULT * TIME_DOMAIN_CENTER_FREQ * t) / 
-               (SECOND_HARMONIC_FREQ_MULT * t) * envelope;
+               (SECOND_HARMONIC_FREQ_MULT * TIME_DOMAIN_CENTER_FREQ * t) * envelope;
     }
     
     // Normalize
