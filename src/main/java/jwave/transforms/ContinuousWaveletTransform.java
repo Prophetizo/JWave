@@ -305,7 +305,8 @@ public class ContinuousWaveletTransform extends BasicTransform {
    * @return next power of two
    */
   private int nextPowerOfTwo(int n) {
-    return (int) Math.pow(2, Math.ceil(Math.log(n) / Math.log(2)));
+    if (n <= 1) return 1;
+    return 1 << (32 - Integer.numberOfLeadingZeros(n - 1));
   }
 
   /**
