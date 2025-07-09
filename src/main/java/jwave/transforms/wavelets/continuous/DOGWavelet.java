@@ -51,6 +51,12 @@ import jwave.datatypes.natives.Complex;
 public class DOGWavelet extends ContinuousWavelet {
 
   /**
+   * Base support factor in standard deviations.
+   * 3 sigma captures approximately 99.7% of the Gaussian envelope energy.
+   */
+  private static final double BASE_SUPPORT_FACTOR = 3.0;
+
+  /**
    * Derivative order (must be positive integer).
    */
   private int _n;
@@ -201,11 +207,18 @@ public class DOGWavelet extends ContinuousWavelet {
    * Returns the effective support of the DOG wavelet in time domain.
    * The wavelet has significant values within approximately +/- (3 + n/2)*sigma.
    * 
+   * The base factor of 3.0 represents approximately 3 standard deviations
+   * where the Gaussian envelope has decayed to ~0.01 of its peak value.
+   * The additional n/2 term accounts for the increased spread due to 
+   * higher order derivatives.
+   * 
    * @return array of [min_t, max_t]
    */
   @Override
   public double[] getEffectiveSupport() {
-    double range = (3.0 + _n / 2.0) * _sigma;
+    // Base support: BASE_SUPPORT_FACTOR standard deviations captures ~99.7% of Gaussian energy
+    // Additional support: n/2 accounts for derivative order spreading
+    double range = (BASE_SUPPORT_FACTOR + _n / 2.0) * _sigma;
     return new double[] { -range, range };
   }
 
@@ -361,6 +374,10 @@ public class DOGWavelet extends ContinuousWavelet {
    * @return DOGWavelet instance
    */
   public static DOGWavelet createStandard(String type, double sigma) {
+    if (type == null) {
+      throw new IllegalArgumentException("DOG wavelet type cannot be null");
+    }
+    
     switch (type.toLowerCase()) {
       case "edge":
         return new DOGWavelet(1, sigma); // First derivative

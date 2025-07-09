@@ -328,6 +328,14 @@ public class DOGWaveletTest {
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("Unknown"));
         }
+        
+        // Test null type
+        try {
+            DOGWavelet.createStandard(null, 1.0);
+            fail("Should throw exception for null type");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("cannot be null"));
+        }
     }
 
     /**
