@@ -243,7 +243,9 @@ public class PaulWavelet extends ContinuousWavelet {
       case 1: return new Complex(0, 1);   // i^1 = i
       case 2: return new Complex(-1, 0);  // i^2 = -1
       case 3: return new Complex(0, -1);  // i^3 = -i
-      default: return new Complex(1, 0);  // Should never reach here
+      default: 
+        throw new AssertionError("Unexpected modulo result: " + mMod4 + 
+                                " (this should never happen for m % 4)");
     }
   }
 
