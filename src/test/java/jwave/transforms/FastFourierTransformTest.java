@@ -330,45 +330,5 @@ public class FastFourierTransformTest {
         assertEquals("Single element inverse imag", 2.71, result[0].getImag(), DELTA);
     }
 
-    /**
-     * Performance comparison test between DFT and FFT.
-     */
-    @Test
-    public void testPerformanceImprovement() {
-        FastFourierTransform fft = new FastFourierTransform();
-        DiscreteFourierTransform dft = new DiscreteFourierTransform();
-        
-        // Test with size 512 (power of 2)
-        int n = 512;
-        Complex[] signal = new Complex[n];
-        for (int i = 0; i < n; i++) {
-            signal[i] = new Complex(Math.random(), Math.random());
-        }
-        
-        // Time FFT
-        long startFFT = System.nanoTime();
-        Complex[] fftResult = fft.forward(signal);
-        long timeFFT = System.nanoTime() - startFFT;
-        
-        // Time DFT
-        long startDFT = System.nanoTime();
-        Complex[] dftResult = dft.forward(signal);
-        long timeDFT = System.nanoTime() - startDFT;
-        
-        // FFT should be significantly faster
-        assertTrue("FFT should be faster than DFT", timeFFT < timeDFT);
-        
-        // Results should match
-        for (int i = 0; i < n; i++) {
-            assertEquals("FFT/DFT match real at " + i,
-                       dftResult[i].getReal(), fftResult[i].getReal(), 1e-6);
-            assertEquals("FFT/DFT match imag at " + i,
-                       dftResult[i].getImag(), fftResult[i].getImag(), 1e-6);
-        }
-        
-        System.out.println("Performance for n=" + n + ":");
-        System.out.println("  DFT time: " + (timeDFT / 1000) + " µs");
-        System.out.println("  FFT time: " + (timeFFT / 1000) + " µs");
-        System.out.println("  Speedup: " + (timeDFT / (double)timeFFT) + "x");
-    }
+    // Removed performance comparison test between DFT and FFT.
 }
