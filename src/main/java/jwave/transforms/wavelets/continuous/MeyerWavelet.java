@@ -54,6 +54,14 @@ import jwave.datatypes.natives.Complex;
 public class MeyerWavelet extends ContinuousWavelet {
 
   /**
+   * Time domain decay parameter that controls the envelope width.
+   * This value determines how quickly the wavelet decays in time domain.
+   * Larger values create wider wavelets with slower decay.
+   * The value 25.0 provides a good balance between localization and smoothness.
+   */
+  private static final double TIME_DECAY_PARAMETER = 25.0;
+
+  /**
    * Default constructor.
    */
   public MeyerWavelet() {
@@ -81,7 +89,7 @@ public class MeyerWavelet extends ContinuousWavelet {
     double value = 0.0;
     
     // Envelope function that ensures decay
-    double envelope = Math.exp(-0.5 * t * t / 25.0);
+    double envelope = Math.exp(-0.5 * t * t / TIME_DECAY_PARAMETER);
     
     // Core oscillation
     if (Math.abs(t) < 1e-10) {
