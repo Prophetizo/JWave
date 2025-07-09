@@ -378,7 +378,7 @@ public class DOGWavelet extends ContinuousWavelet {
       throw new IllegalArgumentException("DOG wavelet type cannot be null");
     }
     
-    switch (type.toLowerCase()) {
+    switch (type.toLowerCase(Locale.ROOT)) {
       case "edge":
         return new DOGWavelet(1, sigma); // First derivative
       case "mexican_hat":
