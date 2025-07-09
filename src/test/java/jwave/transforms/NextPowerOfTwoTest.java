@@ -89,54 +89,7 @@ public class NextPowerOfTwoTest {
         assertFalse(MathUtils.isPowerOfTwo(-8));
     }
     
-    @Test
-    public void compareBitTwiddlingVsFloatingPoint() {
-        System.out.println("Comparing bit-twiddling vs floating-point approaches:");
-        
-        // Test a range of values
-        int[] testValues = {0, 1, 2, 3, 4, 5, 7, 8, 9, 15, 16, 17, 31, 32, 33,
-                           63, 64, 65, 127, 128, 129, 255, 256, 257, 511, 512, 513,
-                           1023, 1024, 1025, 2047, 2048, 2049, 4095, 4096, 4097,
-                           8191, 8192, 8193, 16383, 16384, 16385, 32767, 32768, 32769,
-                           65535, 65536, 65537, 131071, 131072, 131073,
-                           1000000, 10000000};
-        
-        boolean allMatch = true;
-        for (int n : testValues) {
-            int bitResult = MathUtils.nextPowerOfTwo(n);
-            int floatResult = nextPowerOfTwoFloat(n);
-            
-            if (bitResult != floatResult) {
-                System.out.printf("Mismatch at n=%d: bit=%d, float=%d%n", 
-                                n, bitResult, floatResult);
-                allMatch = false;
-            }
-        }
-        
-        assertTrue("Mismatch detected between bit-twiddling and floating-point implementations!", allMatch);
-        
-        if (allMatch) {
-            System.out.println("All values match between bit-twiddling and floating-point!");
-        }
-        
-        // Performance comparison
-        long startBit = System.nanoTime();
-        for (int i = 0; i < 1000000; i++) {
-            MathUtils.nextPowerOfTwo(i % 100000);
-        }
-        long timeBit = System.nanoTime() - startBit;
-        
-        long startFloat = System.nanoTime();
-        for (int i = 0; i < 1000000; i++) {
-            nextPowerOfTwoFloat(i % 100000);
-        }
-        long timeFloat = System.nanoTime() - startFloat;
-        
-        System.out.printf("%nPerformance comparison (1M operations):%n");
-        System.out.printf("Bit-twiddling: %.2f ms%n", timeBit / 1_000_000.0);
-        System.out.printf("Floating-point: %.2f ms%n", timeFloat / 1_000_000.0);
-        System.out.printf("Speedup: %.2fx%n", (double)timeFloat / timeBit);
-    }
+    // The compareBitTwiddlingVsFloatingPoint test has been moved to a dedicated performance test suite.
     
     private int nextPowerOfTwoFloat(int n) {
         if (n <= 1) return 1;
