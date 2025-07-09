@@ -343,19 +343,6 @@ public class DOGWavelet extends ContinuousWavelet {
     return result;
   }
 
-  /**
-   * Compute factorial of n.
-   * 
-   * @param n input value
-   * @return n!
-   */
-  private double factorial(int n) {
-    double result = 1.0;
-    for (int i = 2; i <= n; i++) {
-      result *= i;
-    }
-    return result;
-  }
 
   /**
    * Check if this DOG wavelet is equivalent to Mexican Hat.
