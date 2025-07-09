@@ -28,6 +28,7 @@ import jwave.datatypes.natives.Complex;
 import jwave.transforms.wavelets.continuous.MorletWavelet;
 import jwave.transforms.wavelets.continuous.MexicanHatWavelet;
 import jwave.transforms.wavelets.continuous.PaulWavelet;
+import jwave.transforms.wavelets.continuous.MeyerWavelet;
 
 /**
  * Test class for Continuous Wavelet Transform implementation.
@@ -290,6 +291,29 @@ public class ContinuousWaveletTransformTest {
     // Test positive frequency response
     Complex posFreq = wavelet.fourierTransform(4.0);
     assertTrue("Positive frequencies should be non-zero", posFreq.getMag() > 0);
+  }
+
+  /**
+   * Test Meyer wavelet basic properties.
+   */
+  @Test
+  public void testMeyerWaveletProperties() {
+    MeyerWavelet wavelet = new MeyerWavelet();
+    
+    // Test that Meyer wavelet is real-valued
+    Complex value = wavelet.wavelet(1.0);
+    assertEquals("Meyer wavelet should be real-valued", 0.0, value.getImag(), DELTA);
+    
+    // Test Fourier transform compact support
+    Complex outsideSupport = wavelet.fourierTransform(10.0);
+    assertEquals("Should be zero outside support", 0.0, outsideSupport.getMag(), DELTA);
+    
+    Complex insideSupport = wavelet.fourierTransform(3.0);
+    assertTrue("Should be non-zero inside support", insideSupport.getMag() > 0);
+    
+    // Test admissibility
+    double admissibility = wavelet.getAdmissibilityConstant();
+    assertEquals("Meyer admissibility", 2.0 * Math.PI, admissibility, DELTA);
   }
 
   /**
