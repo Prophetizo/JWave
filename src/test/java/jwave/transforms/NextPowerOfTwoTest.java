@@ -90,9 +90,4 @@ public class NextPowerOfTwoTest {
     }
     
     // The compareBitTwiddlingVsFloatingPoint test has been moved to a dedicated performance test suite.
-    
-    private int nextPowerOfTwoFloat(int n) {
-        if (n <= 1) return 1;
-        return (int) Math.pow(2, Math.ceil(Math.log(n) / Math.log(2)));
-    }
 }
