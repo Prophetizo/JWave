@@ -90,6 +90,12 @@ public class MeyerWavelet extends ContinuousWavelet {
    * This corresponds to the peak frequency response of the Meyer wavelet.
    */
   private static final double TIME_DOMAIN_CENTER_FREQ = 0.7;
+  
+  /**
+   * Threshold for detecting near-zero time values.
+   * Used to avoid division by zero in the sinc function evaluation.
+   */
+  private static final double ZERO_TIME_THRESHOLD = 1e-10;
 
   /**
    * Default constructor.
@@ -122,7 +128,7 @@ public class MeyerWavelet extends ContinuousWavelet {
     double envelope = Math.exp(-0.5 * t * t / TIME_DECAY_PARAMETER);
     
     // Core oscillation
-    if (Math.abs(t) < 1e-10) {
+    if (Math.abs(t) < ZERO_TIME_THRESHOLD) {
       // At t=0, use the limit value
       value = TIME_DOMAIN_CENTER_FREQ * envelope;
     } else {
