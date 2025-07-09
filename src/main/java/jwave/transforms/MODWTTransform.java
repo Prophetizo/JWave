@@ -109,12 +109,12 @@ public class MODWTTransform extends WaveletTransform {
     private static final int MAX_DECOMPOSITION_LEVEL = 13;
 
     // Cache for upsampled filters, keyed by level
-    private transient ConcurrentHashMap<Integer, double[]> gFilterCache;
-    private transient ConcurrentHashMap<Integer, double[]> hFilterCache;
+    private transient volatile ConcurrentHashMap<Integer, double[]> gFilterCache;
+    private transient volatile ConcurrentHashMap<Integer, double[]> hFilterCache;
     
     // Base MODWT filters (computed once from wavelet)
-    private transient double[] g_modwt_base;
-    private transient double[] h_modwt_base;
+    private transient volatile double[] g_modwt_base;
+    private transient volatile double[] h_modwt_base;
     
     // Flag to track if cache is valid (volatile for thread visibility)
     private transient volatile boolean cacheInitialized = false;
