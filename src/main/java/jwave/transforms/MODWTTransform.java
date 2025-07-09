@@ -109,12 +109,12 @@ public class MODWTTransform extends WaveletTransform {
     private static final int MAX_DECOMPOSITION_LEVEL = 13;
 
     // Cache for upsampled filters, keyed by level
-    private transient Map<Integer, double[]> gFilterCache;
-    private transient Map<Integer, double[]> hFilterCache;
+    private transient volatile ConcurrentHashMap<Integer, double[]> gFilterCache;
+    private transient volatile ConcurrentHashMap<Integer, double[]> hFilterCache;
     
     // Base MODWT filters (computed once from wavelet)
-    private transient double[] g_modwt_base;
-    private transient double[] h_modwt_base;
+    private transient volatile double[] g_modwt_base;
+    private transient volatile double[] h_modwt_base;
     
     // Flag to track if cache is valid (volatile for thread visibility)
     private transient volatile boolean cacheInitialized = false;
@@ -404,7 +404,31 @@ public class MODWTTransform extends WaveletTransform {
      */
     private double[] getCachedGFilter(int level) {
         initializeFilterCache();
-        return gFilterCache.computeIfAbsent(level, k -> upsample(g_modwt_base, k));
+        
+        // Check if already cached
+        double[] cached = gFilterCache.get(level);
+        if (cached != null) {
+            return cached;
+        }
+        
+        // Compute under synchronization to avoid race with clearFilterCache
+        synchronized (this) {
+            // Double-check after acquiring lock
+            cached = gFilterCache.get(level);
+            if (cached != null) {
+                return cached;
+            }
+            
+            // Ensure base filter is initialized
+            if (g_modwt_base == null) {
+                initializeFilterCache();
+            }
+            
+            // Compute and cache
+            double[] filter = upsample(g_modwt_base, level);
+            gFilterCache.put(level, filter);
+            return filter;
+        }
     }
     
     /**
@@ -413,7 +437,31 @@ public class MODWTTransform extends WaveletTransform {
      */
     private double[] getCachedHFilter(int level) {
         initializeFilterCache();
-        return hFilterCache.computeIfAbsent(level, k -> upsample(h_modwt_base, k));
+        
+        // Check if already cached
+        double[] cached = hFilterCache.get(level);
+        if (cached != null) {
+            return cached;
+        }
+        
+        // Compute under synchronization to avoid race with clearFilterCache
+        synchronized (this) {
+            // Double-check after acquiring lock
+            cached = hFilterCache.get(level);
+            if (cached != null) {
+                return cached;
+            }
+            
+            // Ensure base filter is initialized
+            if (h_modwt_base == null) {
+                initializeFilterCache();
+            }
+            
+            // Compute and cache
+            double[] filter = upsample(h_modwt_base, level);
+            hFilterCache.put(level, filter);
+            return filter;
+        }
     }
     
     /**
@@ -422,11 +470,16 @@ public class MODWTTransform extends WaveletTransform {
      */
     public void clearFilterCache() {
         synchronized (this) {
+            // Set flag first to prevent new threads from using stale data
+            cacheInitialized = false;
+            
+            // Clear caches
             if (gFilterCache != null) gFilterCache.clear();
             if (hFilterCache != null) hFilterCache.clear();
-            // Don't set base filters to null - they can be reused
-            // Just mark as uninitialized so they'll be recomputed if needed
-            cacheInitialized = false;
+            
+            // Clear base filters to force recomputation
+            g_modwt_base = null;
+            h_modwt_base = null;
         }
     }
     
