@@ -112,7 +112,7 @@ public class DOGWaveletExample {
         }
         
         // Use DOG n=1 for edge detection
-        DOGWavelet edgeDetector = DOGWavelet.createStandard("edge", 2.0);
+        DOGWavelet edgeDetector = DOGWavelet.createStandard(DOGWavelet.Type.EDGE, 2.0);
         ContinuousWaveletTransform cwt = new ContinuousWaveletTransform(edgeDetector);
         
         // Single scale analysis
@@ -224,17 +224,17 @@ public class DOGWaveletExample {
         }
         
         // Standard DOG wavelets
-        String[] types = {"edge", "mexican_hat", "zero_crossing", "ridge"};
-        int[] orders = {1, 2, 3, 4};
+        DOGWavelet.Type[] types = {DOGWavelet.Type.EDGE, DOGWavelet.Type.MEXICAN_HAT, 
+                                  DOGWavelet.Type.ZERO_CROSSING, DOGWavelet.Type.RIDGE};
         
         System.out.println("\nFeature detection with standard DOG wavelets:");
         
-        for (int idx = 0; idx < types.length; idx++) {
-            DOGWavelet dog = DOGWavelet.createStandard(types[idx], 2.0);
+        for (DOGWavelet.Type type : types) {
+            DOGWavelet dog = DOGWavelet.createStandard(type, 2.0);
             ContinuousWaveletTransform cwt = new ContinuousWaveletTransform(dog);
             
             // Use appropriate scale for each order
-            double scale = 10.0 / Math.sqrt(orders[idx]);
+            double scale = 10.0 / Math.sqrt(type.getOrder());
             double[] scales = {scale};
             
             long start = System.nanoTime();
@@ -254,7 +254,7 @@ public class DOGWaveletExample {
             }
             
             System.out.printf("  %-15s (n=%d): Spike at t=%.3f s, computation time: %.2f ms\n",
-                            types[idx], orders[idx], 
+                            type.name(), type.getOrder(), 
                             spikeLocation / samplingRate, 
                             elapsed / 1_000_000.0);
         }

@@ -23,6 +23,8 @@ package jwave.transforms.wavelets.continuous;
 
 import jwave.datatypes.natives.Complex;
 
+import java.util.Locale;
+
 /**
  * DOG (Derivative of Gaussian) wavelet implementation for Continuous Wavelet Transform.
  * This wavelet is the n-th derivative of a Gaussian function.
@@ -49,6 +51,33 @@ import jwave.datatypes.natives.Complex;
  * @date 07.01.2025
  */
 public class DOGWavelet extends ContinuousWavelet {
+
+  /**
+   * Standard types of DOG wavelets with their derivative orders.
+   */
+  public enum Type {
+    EDGE(1, "Edge detection"),
+    MEXICAN_HAT(2, "Mexican Hat / Ricker wavelet"),
+    RICKER(2, "Ricker wavelet (alias for Mexican Hat)"),
+    ZERO_CROSSING(3, "Zero-crossing detection"),
+    RIDGE(4, "Ridge detection");
+    
+    private final int order;
+    private final String description;
+    
+    Type(int order, String description) {
+      this.order = order;
+      this.description = description;
+    }
+    
+    public int getOrder() {
+      return order;
+    }
+    
+    public String getDescription() {
+      return description;
+    }
+  }
 
   /**
    * Base support factor in standard deviations.
@@ -367,12 +396,28 @@ public class DOGWavelet extends ContinuousWavelet {
   }
 
   /**
+   * Static factory method to create common DOG wavelets using enum type.
+   * 
+   * @param type type of DOG wavelet
+   * @param sigma width parameter
+   * @return DOGWavelet instance
+   */
+  public static DOGWavelet createStandard(Type type, double sigma) {
+    if (type == null) {
+      throw new IllegalArgumentException("DOG wavelet type cannot be null");
+    }
+    return new DOGWavelet(type.getOrder(), sigma);
+  }
+
+  /**
    * Static factory method to create common DOG wavelets.
    * 
    * @param type type of DOG wavelet ("edge", "mexican_hat", "zero_crossing", "ridge")
    * @param sigma width parameter
    * @return DOGWavelet instance
+   * @deprecated Use {@link #createStandard(Type, double)} instead for type safety
    */
+  @Deprecated
   public static DOGWavelet createStandard(String type, double sigma) {
     if (type == null) {
       throw new IllegalArgumentException("DOG wavelet type cannot be null");
@@ -380,14 +425,14 @@ public class DOGWavelet extends ContinuousWavelet {
     
     switch (type.toLowerCase(Locale.ROOT)) {
       case "edge":
-        return new DOGWavelet(1, sigma); // First derivative
+        return createStandard(Type.EDGE, sigma);
       case "mexican_hat":
       case "ricker":
-        return new DOGWavelet(2, sigma); // Second derivative
+        return createStandard(Type.MEXICAN_HAT, sigma);
       case "zero_crossing":
-        return new DOGWavelet(3, sigma); // Third derivative
+        return createStandard(Type.ZERO_CROSSING, sigma);
       case "ridge":
-        return new DOGWavelet(4, sigma); // Fourth derivative
+        return createStandard(Type.RIDGE, sigma);
       default:
         throw new IllegalArgumentException("Unknown DOG wavelet type: " + type);
     }
