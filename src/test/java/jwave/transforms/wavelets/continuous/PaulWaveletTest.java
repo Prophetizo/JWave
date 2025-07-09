@@ -283,8 +283,7 @@ public class PaulWaveletTest {
             long timeDirect = System.nanoTime() - startDirect;
             
             double speedup = timeDirect / (double) timeFFT;
-            System.out.println("Paul wavelet CWT speedup (FFT vs direct): " + speedup + "x");
-            assertTrue("FFT should be faster", speedup > 1.0);
+            assertTrue("FFT should be faster than direct method", speedup > 1.0);
         }
         
         // Verify result is valid
