@@ -26,6 +26,8 @@ package jwave.transforms.wavelets.continuous;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import jwave.datatypes.natives.Complex;
+import jwave.transforms.ContinuousWaveletTransform;
+import jwave.transforms.CWTResult;
 
 /**
  * Test class for Meyer wavelet implementation.
@@ -268,14 +270,36 @@ public class MeyerWaveletTest {
     // Create a simple test signal
     int signalLength = 64;
     double[] signal = new double[signalLength];
+    double samplingRate = 100.0; // 100 Hz
     
-    // Sinusoidal signal
+    // Sinusoidal signal at 10 Hz
     for (int i = 0; i < signalLength; i++) {
-      signal[i] = Math.sin(2 * Math.PI * i / 16.0);
+      double t = i / samplingRate;
+      signal[i] = Math.sin(2 * Math.PI * 10.0 * t);
     }
     
-    // Test that wavelet can process the signal
-    Complex result = wavelet.wavelet(1.0);
-    assertNotNull("Wavelet evaluation should not return null", result);
+    // Create CWT and perform transform
+    ContinuousWaveletTransform cwt = new ContinuousWaveletTransform(wavelet);
+    double[] scales = ContinuousWaveletTransform.generateLinearScales(0.5, 5.0, 10);
+    
+    // Test that CWT can be performed without errors
+    CWTResult result = cwt.transform(signal, scales, samplingRate);
+    assertNotNull("CWT result should not be null", result);
+    assertEquals("Number of scales should match", 10, result.getNumberOfScales());
+    assertEquals("Number of time points should match", signalLength, result.getNumberOfTimePoints());
+    
+    // Verify that results are reasonable
+    double[][] magnitude = result.getMagnitude();
+    boolean hasNonZeroValues = false;
+    for (int i = 0; i < scales.length; i++) {
+      for (int j = 0; j < signalLength; j++) {
+        assertFalse("Magnitude should not be NaN", Double.isNaN(magnitude[i][j]));
+        assertFalse("Magnitude should not be infinite", Double.isInfinite(magnitude[i][j]));
+        if (magnitude[i][j] > 0) {
+          hasNonZeroValues = true;
+        }
+      }
+    }
+    assertTrue("CWT should produce non-zero values", hasNonZeroValues);
   }
 }
