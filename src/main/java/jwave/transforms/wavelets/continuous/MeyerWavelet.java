@@ -188,22 +188,17 @@ public class MeyerWavelet extends ContinuousWavelet {
     // Envelope function that ensures decay
     double envelope = Math.exp(-0.5 * t * t / TIME_DECAY_PARAMETER);
     
-    // Core oscillation
-    if (Math.abs(t) < ZERO_TIME_THRESHOLD) {
-      // At t=0, use the limit value
-      value = TIME_DOMAIN_CENTER_FREQ * envelope;
-    } else {
-      // Approximation based on Meyer wavelet properties
-      value = Math.sin(TIME_DOMAIN_CENTER_FREQ * t) / t * envelope;
-      
-      // Add correction terms for better approximation
-      value += FIRST_HARMONIC_AMPLITUDE * 
-               Math.sin(FIRST_HARMONIC_FREQ_MULT * TIME_DOMAIN_CENTER_FREQ * t) / 
-               (FIRST_HARMONIC_FREQ_MULT * TIME_DOMAIN_CENTER_FREQ * t) * envelope;
-      value += SECOND_HARMONIC_AMPLITUDE * 
-               Math.sin(SECOND_HARMONIC_FREQ_MULT * TIME_DOMAIN_CENTER_FREQ * t) / 
-               (SECOND_HARMONIC_FREQ_MULT * TIME_DOMAIN_CENTER_FREQ * t) * envelope;
-    }
+    // Core oscillation using numerically stable sinc function
+    // Approximation based on Meyer wavelet properties
+    double omega0 = TIME_DOMAIN_CENTER_FREQ;
+    value = omega0 * sinc(omega0 * t) * envelope;
+    
+    // Add correction terms for better approximation
+    double omega1 = FIRST_HARMONIC_FREQ_MULT * omega0;
+    value += FIRST_HARMONIC_AMPLITUDE * omega1 * sinc(omega1 * t) * envelope;
+    
+    double omega2 = SECOND_HARMONIC_FREQ_MULT * omega0;
+    value += SECOND_HARMONIC_AMPLITUDE * omega2 * sinc(omega2 * t) * envelope;
     
     // Normalize
     value *= Math.sqrt(2.0 / Math.PI);
@@ -251,6 +246,23 @@ public class MeyerWavelet extends ContinuousWavelet {
     return new Complex(realPart, imagPart);
   }
 
+  /**
+   * Computes the sinc function sin(x)/x in a numerically stable way.
+   * Handles the limit case at x=0 and very small x values.
+   * 
+   * @param x input value
+   * @return sinc(x) = sin(x)/x
+   */
+  private double sinc(double x) {
+    double absX = Math.abs(x);
+    if (absX < ZERO_TIME_THRESHOLD) {
+      // Use Taylor series expansion for small x: sinc(x) ≈ 1 - x²/6 + x⁴/120
+      double x2 = x * x;
+      return 1.0 - x2 / 6.0 + x2 * x2 / 120.0;
+    }
+    return Math.sin(x) / x;
+  }
+  
   /**
    * Smooth transition function ν(x) used in Meyer wavelet definition.
    * This implements a C∞ transition from 0 to 1.
