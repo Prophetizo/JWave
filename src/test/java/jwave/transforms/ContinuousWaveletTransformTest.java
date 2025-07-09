@@ -27,6 +27,7 @@ import org.junit.Test;
 import jwave.datatypes.natives.Complex;
 import jwave.transforms.wavelets.continuous.MorletWavelet;
 import jwave.transforms.wavelets.continuous.MexicanHatWavelet;
+import jwave.transforms.wavelets.continuous.PaulWavelet;
 
 /**
  * Test class for Continuous Wavelet Transform implementation.
@@ -269,6 +270,26 @@ public class ContinuousWaveletTransformTest {
     support = mexican.getEffectiveSupport();
     assertEquals("Support should be [-5, 5] for sigma=1", -5.0, support[0], DELTA);
     assertEquals("Support should be [-5, 5] for sigma=1", 5.0, support[1], DELTA);
+  }
+
+  /**
+   * Test Paul wavelet basic properties.
+   */
+  @Test
+  public void testPaulWaveletProperties() {
+    PaulWavelet wavelet = new PaulWavelet(4);
+    
+    // Test that Paul wavelet is complex-valued
+    Complex value = wavelet.wavelet(1.0);
+    assertTrue("Paul wavelet should be complex", Math.abs(value.getImag()) > DELTA);
+    
+    // Test Fourier transform is zero for negative frequencies
+    Complex negFreq = wavelet.fourierTransform(-1.0);
+    assertEquals("Negative frequencies should be zero", 0.0, negFreq.getMag(), DELTA);
+    
+    // Test positive frequency response
+    Complex posFreq = wavelet.fourierTransform(4.0);
+    assertTrue("Positive frequencies should be non-zero", posFreq.getMag() > 0);
   }
 
   /**
