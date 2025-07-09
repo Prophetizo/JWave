@@ -24,6 +24,7 @@
 package jwave.transforms.wavelets.continuous;
 
 import static org.junit.Assert.*;
+import org.junit.Before;
 import org.junit.Test;
 import jwave.datatypes.natives.Complex;
 import jwave.transforms.ContinuousWaveletTransform;
@@ -45,14 +46,19 @@ public class MeyerWaveletTest {
    * in the transition function evaluation near boundaries.
    */
   private static final double CONTINUITY_TOLERANCE = 1e-4;
+  
+  private MeyerWavelet wavelet;
+  
+  @Before
+  public void setUp() {
+    wavelet = new MeyerWavelet();
+  }
 
   /**
    * Test Meyer wavelet instantiation and basic properties.
    */
   @Test
   public void testInstantiation() {
-    MeyerWavelet wavelet = new MeyerWavelet();
-    
     assertEquals("Meyer", wavelet.getName());
     assertEquals(0.7 / (2.0 * Math.PI), wavelet.getCenterFrequency(), DELTA);
   }
@@ -62,7 +68,6 @@ public class MeyerWaveletTest {
    */
   @Test
   public void testRealValued() {
-    MeyerWavelet wavelet = new MeyerWavelet();
     
     // Test at various time points
     double[] testPoints = {-10, -5, -1, 0, 1, 5, 10};
@@ -79,7 +84,7 @@ public class MeyerWaveletTest {
    */
   @Test
   public void testDecay() {
-    MeyerWavelet wavelet = new MeyerWavelet();
+    
     
     // Test that wavelet decays as we move away from origin
     Complex value0 = wavelet.wavelet(0);
@@ -100,7 +105,7 @@ public class MeyerWaveletTest {
    */
   @Test
   public void testFourierCompactSupport() {
-    MeyerWavelet wavelet = new MeyerWavelet();
+    
     
     // Test zero outside support
     Complex zeroLow = wavelet.fourierTransform(0.5);
@@ -122,7 +127,7 @@ public class MeyerWaveletTest {
    */
   @Test
   public void testTransitionFunction() {
-    MeyerWavelet wavelet = new MeyerWavelet();
+    
     
     // Access transition function through Fourier transform behavior
     // The transition occurs at boundaries of support regions
@@ -144,7 +149,7 @@ public class MeyerWaveletTest {
    */
   @Test
   public void testAdmissibility() {
-    MeyerWavelet wavelet = new MeyerWavelet();
+    
     
     double admissibility = wavelet.getAdmissibilityConstant();
     assertEquals("Meyer wavelet admissibility constant", 
@@ -159,7 +164,7 @@ public class MeyerWaveletTest {
    */
   @Test
   public void testEffectiveSupport() {
-    MeyerWavelet wavelet = new MeyerWavelet();
+    
     
     double[] support = wavelet.getEffectiveSupport();
     assertEquals("Support should be symmetric", 
@@ -173,7 +178,7 @@ public class MeyerWaveletTest {
    */
   @Test
   public void testBandwidth() {
-    MeyerWavelet wavelet = new MeyerWavelet();
+    
     
     double[] bandwidth = wavelet.getBandwidth();
     
@@ -194,7 +199,7 @@ public class MeyerWaveletTest {
    */
   @Test
   public void testOrthogonalityProperty() {
-    MeyerWavelet wavelet = new MeyerWavelet();
+    
     
     // Test that Fourier transform magnitude is bounded
     double maxMag = 0;
@@ -212,7 +217,7 @@ public class MeyerWaveletTest {
    */
   @Test
   public void testTimeFrequencyLocalization() {
-    MeyerWavelet wavelet = new MeyerWavelet();
+    
     
     // Meyer wavelet should have good frequency localization
     double[] bandwidth = wavelet.getBandwidth();
@@ -229,7 +234,7 @@ public class MeyerWaveletTest {
    */
   @Test
   public void testNumericalStability() {
-    MeyerWavelet wavelet = new MeyerWavelet();
+    
     
     // Test at very small and large time values
     Complex smallTime = wavelet.wavelet(1e-10);
@@ -260,7 +265,7 @@ public class MeyerWaveletTest {
    */
   @Test
   public void testSymmetry() {
-    MeyerWavelet wavelet = new MeyerWavelet();
+    
     
     // Meyer wavelet in time domain should be symmetric (even function)
     double[] testPoints = {1, 2, 3, 5, 10};
@@ -300,7 +305,7 @@ public class MeyerWaveletTest {
    */
   @Test
   public void testCWTIntegration() {
-    MeyerWavelet wavelet = new MeyerWavelet();
+    
     
     // Create a simple test signal
     int signalLength = 64;
