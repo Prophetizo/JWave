@@ -87,6 +87,8 @@ public class NextPowerOfTwoTest {
             }
         }
         
+        assertTrue("Mismatch detected between bit-twiddling and floating-point implementations!", allMatch);
+        
         if (allMatch) {
             System.out.println("All values match between bit-twiddling and floating-point!");
         }
