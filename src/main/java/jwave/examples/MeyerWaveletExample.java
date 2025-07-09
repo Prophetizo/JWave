@@ -28,6 +28,7 @@ import jwave.datatypes.natives.Complex;
 import jwave.transforms.ContinuousWaveletTransform;
 import jwave.transforms.CWTResult;
 import jwave.transforms.wavelets.continuous.MeyerWavelet;
+import java.util.Random;
 
 /**
  * Example demonstrating the Meyer wavelet for Continuous Wavelet Transform.
@@ -87,6 +88,9 @@ public class MeyerWaveletExample {
     int signalLength = 512;
     double[] signal = new double[signalLength];
     
+    // Use a fixed seed for reproducible results
+    Random random = new Random(42);
+    
     // Create a signal with time-varying frequency content
     // Low frequency at the beginning, high frequency at the end
     for (int i = 0; i < signalLength; i++) {
@@ -103,8 +107,8 @@ public class MeyerWaveletExample {
         signal[i] = Math.sin(2 * Math.PI * 25 * t);
       }
       
-      // Add some noise
-      signal[i] += 0.1 * Math.random();
+      // Add some reproducible noise
+      signal[i] += 0.1 * random.nextGaussian();
     }
     
     // Perform CWT with Meyer wavelet
