@@ -309,11 +309,11 @@ public class ContinuousWaveletTransform extends BasicTransform {
   }
 
   /**
-   * Compute FFT of a real signal using JWave's DFT implementation.
+   * Compute FFT of a real signal using JWave's Fast Fourier Transform.
    * 
-   * Note: This currently uses JWave's O(n²) DFT implementation. For better
-   * performance with large signals, consider implementing or integrating a
-   * true O(n log n) FFT algorithm (e.g., Cooley-Tukey FFT).
+   * Uses O(n log n) algorithms:
+   * - Cooley-Tukey for power-of-2 lengths
+   * - Bluestein's chirp z-transform for arbitrary lengths
    * 
    * @param signal real input signal
    * @return complex FFT result
@@ -327,24 +327,23 @@ public class ContinuousWaveletTransform extends BasicTransform {
       complexSignal[i] = new Complex(signal[i], 0);
     }
     
-    // Use JWave's DiscreteFourierTransform (O(n²) complexity)
-    DiscreteFourierTransform dft = new DiscreteFourierTransform();
-    return dft.forward(complexSignal);
+    // Use JWave's Fast Fourier Transform (O(n log n) complexity)
+    FastFourierTransform fft = new FastFourierTransform();
+    return fft.forward(complexSignal);
   }
 
   /**
-   * Compute inverse FFT using JWave's DFT implementation.
+   * Compute inverse FFT using JWave's Fast Fourier Transform.
    * 
-   * Note: This currently uses JWave's O(n²) inverse DFT. For better
-   * performance, a true O(n log n) IFFT should be implemented.
+   * Uses O(n log n) algorithms for all input sizes.
    * 
    * @param spectrum complex frequency domain signal
    * @return complex time domain result
    */
   private Complex[] computeIFFT(Complex[] spectrum) {
-    // Use JWave's DiscreteFourierTransform (O(n²) complexity)
-    DiscreteFourierTransform dft = new DiscreteFourierTransform();
-    return dft.reverse(spectrum);
+    // Use JWave's Fast Fourier Transform (O(n log n) complexity)
+    FastFourierTransform fft = new FastFourierTransform();
+    return fft.reverse(spectrum);
   }
 
   /**
