@@ -103,6 +103,60 @@ public class MeyerWavelet extends ContinuousWavelet {
    * the time range where |ψ(t)| > 0.01 * max|ψ(t)|.
    */
   private static final double EFFECTIVE_SUPPORT_RADIUS = 15.0;
+  
+  /**
+   * Lower frequency boundary for Meyer wavelet support in radians.
+   * The Meyer wavelet has compact support in frequency domain starting at 2π/3.
+   */
+  private static final double FREQ_SUPPORT_LOWER = 2.0 * Math.PI / 3.0;
+  
+  /**
+   * Middle frequency boundary for Meyer wavelet transition in radians.
+   * This marks the transition from sin to cos branch at 4π/3.
+   */
+  private static final double FREQ_SUPPORT_MIDDLE = 4.0 * Math.PI / 3.0;
+  
+  /**
+   * Upper frequency boundary for Meyer wavelet support in radians.
+   * The Meyer wavelet has compact support in frequency domain ending at 8π/3.
+   */
+  private static final double FREQ_SUPPORT_UPPER = 8.0 * Math.PI / 3.0;
+  
+  /**
+   * Normalized lower frequency boundary (in cycles per unit).
+   * This is the lower boundary divided by 2π for frequency domain representation.
+   */
+  private static final double NORMALIZED_FREQ_LOWER = 2.0 / 3.0 / (2.0 * Math.PI);
+  
+  /**
+   * Normalized upper frequency boundary (in cycles per unit).
+   * This is the upper boundary divided by 2π for frequency domain representation.
+   */
+  private static final double NORMALIZED_FREQ_UPPER = 8.0 / 3.0 / (2.0 * Math.PI);
+  
+  /**
+   * Polynomial coefficient for x^0 term in transition function.
+   * Part of the smooth C∞ transition polynomial.
+   */
+  private static final double TRANSITION_POLY_C0 = 35.0;
+  
+  /**
+   * Polynomial coefficient for x^1 term in transition function.
+   * Part of the smooth C∞ transition polynomial.
+   */
+  private static final double TRANSITION_POLY_C1 = -84.0;
+  
+  /**
+   * Polynomial coefficient for x^2 term in transition function.
+   * Part of the smooth C∞ transition polynomial.
+   */
+  private static final double TRANSITION_POLY_C2 = 70.0;
+  
+  /**
+   * Polynomial coefficient for x^3 term in transition function.
+   * Part of the smooth C∞ transition polynomial.
+   */
+  private static final double TRANSITION_POLY_C3 = -20.0;
 
   /**
    * Default constructor.
@@ -169,17 +223,17 @@ public class MeyerWavelet extends ContinuousWavelet {
     double absOmega = Math.abs(omega);
     
     // Meyer wavelet has compact support in frequency: [2π/3, 8π/3]
-    if (absOmega < 2.0 * Math.PI / 3.0 || absOmega > 8.0 * Math.PI / 3.0) {
+    if (absOmega < FREQ_SUPPORT_LOWER || absOmega > FREQ_SUPPORT_UPPER) {
       return new Complex(0.0, 0.0);
     }
     
     double value = 0.0;
     
-    if (absOmega >= 2.0 * Math.PI / 3.0 && absOmega <= 4.0 * Math.PI / 3.0) {
+    if (absOmega >= FREQ_SUPPORT_LOWER && absOmega <= FREQ_SUPPORT_MIDDLE) {
       // First band: sin branch
       double arg = 3.0 * absOmega / (2.0 * Math.PI) - 1.0;
       value = Math.sin(Math.PI / 2.0 * transitionFunction(arg));
-    } else if (absOmega >= 4.0 * Math.PI / 3.0 && absOmega <= 8.0 * Math.PI / 3.0) {
+    } else if (absOmega >= FREQ_SUPPORT_MIDDLE && absOmega <= FREQ_SUPPORT_UPPER) {
       // Second band: cos branch
       double arg = 3.0 * absOmega / (4.0 * Math.PI) - 1.0;
       value = Math.cos(Math.PI / 2.0 * transitionFunction(arg));
@@ -205,11 +259,12 @@ public class MeyerWavelet extends ContinuousWavelet {
       return 1.0;
     } else {
       // Use polynomial transition for smoothness
-      // ν(x) = x^4 * (35 - 84x + 70x^2 - 20x^3)
+      // ν(x) = x^4 * (C0 + C1*x + C2*x^2 + C3*x^3)
       double x2 = x * x;
       double x3 = x2 * x;
       double x4 = x3 * x;
-      return x4 * (35.0 - 84.0 * x + 70.0 * x2 - 20.0 * x3);
+      return x4 * (TRANSITION_POLY_C0 + TRANSITION_POLY_C1 * x + 
+                   TRANSITION_POLY_C2 * x2 + TRANSITION_POLY_C3 * x3);
     }
   }
 
@@ -247,10 +302,7 @@ public class MeyerWavelet extends ContinuousWavelet {
    */
   @Override
   public double[] getBandwidth() {
-    // Convert angular frequency to ordinary frequency
-    // Support is [2π/3, 8π/3] in angular frequency
-    double minFreq = (2.0 / 3.0) / (2.0 * Math.PI);
-    double maxFreq = (8.0 / 3.0) / (2.0 * Math.PI);
-    return new double[] { minFreq, maxFreq };
+    // Return the normalized frequency boundaries
+    return new double[] { NORMALIZED_FREQ_LOWER, NORMALIZED_FREQ_UPPER };
   }
 }

@@ -38,6 +38,7 @@ import jwave.transforms.CWTResult;
 public class MeyerWaveletTest {
 
   private static final double DELTA = 1e-8;
+  private static final double CONTINUITY_TOLERANCE = 0.1;
 
   /**
    * Test Meyer wavelet instantiation and basic properties.
@@ -129,7 +130,7 @@ public class MeyerWaveletTest {
     
     // Values should be close (continuous transition)
     assertEquals("Transition should be continuous", 
-                 val1.getMag(), val2.getMag(), 0.1);
+                 val1.getMag(), val2.getMag(), CONTINUITY_TOLERANCE);
   }
 
   /**
