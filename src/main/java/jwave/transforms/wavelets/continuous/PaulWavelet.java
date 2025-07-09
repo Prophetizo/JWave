@@ -278,7 +278,10 @@ public class PaulWavelet extends ContinuousWavelet {
       throw new IllegalArgumentException("Resolution balance must be between 1 and 10");
     }
     
-    // Map resolution request to order: 1->2, 10->20
+    // Map resolution balance (1-10) to order (2-20) with step of 2
+    // Formula: order = 2 + (frequencyResolution - 1) * 2
+    // This gives: 1→2, 2→4, 3→6, 4→8, 5→10, 6→12, 7→14, 8→16, 9→18, 10→20
+    // All resulting orders are within constructor limit (m ≤ 20)
     int order = (int) Math.round(2 + (frequencyResolution - 1) * 2);
     return new PaulWavelet(order);
   }
