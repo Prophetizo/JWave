@@ -272,7 +272,6 @@ public class ContinuousWaveletTransformTest {
     assertEquals("Support should be [-5, 5] for sigma=1", 5.0, support[1], DELTA);
   }
 
-  /**
    * Test Paul wavelet basic properties.
    */
   @Test
@@ -292,7 +291,6 @@ public class ContinuousWaveletTransformTest {
     assertTrue("Positive frequencies should be non-zero", posFreq.getMag() > 0);
   }
 
-  /**
    * Test edge cases and error handling.
    */
   @Test
