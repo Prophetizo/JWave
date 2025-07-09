@@ -148,7 +148,7 @@ public class MeyerWavelet extends ContinuousWavelet {
     // Normalization
     value *= Math.sqrt(2.0 * Math.PI);
     
-    return new Complex(value, 0);
+    return new Complex(value, 0.0);
   }
 
   /**
