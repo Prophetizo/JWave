@@ -1,5 +1,6 @@
-package jwave.transforms;
+package jwave.examples;
 
+import jwave.transforms.MODWTTransform;
 import jwave.transforms.wavelets.daubechies.Daubechies4;
 import jwave.transforms.wavelets.haar.Haar1;
 

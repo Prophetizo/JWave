@@ -19,8 +19,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package jwave.transforms;
+package jwave.examples;
 
+import jwave.transforms.ContinuousWaveletTransform;
+import jwave.transforms.CWTResult;
 import jwave.transforms.wavelets.continuous.MorletWavelet;
 import jwave.transforms.wavelets.continuous.MexicanHatWavelet;
 
