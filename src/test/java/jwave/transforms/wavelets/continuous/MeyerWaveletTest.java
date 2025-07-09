@@ -38,7 +38,13 @@ import jwave.transforms.CWTResult;
 public class MeyerWaveletTest {
 
   private static final double DELTA = 1e-8;
-  private static final double CONTINUITY_TOLERANCE = 0.1;
+  
+  /**
+   * Tolerance for continuity checks at transition boundaries.
+   * Slightly larger than DELTA to account for numerical precision 
+   * in the transition function evaluation near boundaries.
+   */
+  private static final double CONTINUITY_TOLERANCE = 1e-4;
 
   /**
    * Test Meyer wavelet instantiation and basic properties.
