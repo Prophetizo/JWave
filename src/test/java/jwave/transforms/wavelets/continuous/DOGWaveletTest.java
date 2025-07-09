@@ -145,20 +145,36 @@ public class DOGWaveletTest {
         double x = 1.5;
         
         // Note: DOG applies (-1)^(n+1) factor
-        // So for n=1: -H_1(x) = -2x
+        // For n=1: (-1)^2 * H_1(x) = H_1(x) = 2x
         DOGWavelet dog1 = new DOGWavelet(1, 1.0);
         Complex val1 = dog1.wavelet(x);
-        double gaussian = Math.exp(-0.5 * x * x);
-        double expected1 = -2 * x * gaussian; // Normalized value will differ
         
-        // For n=2: H_2(x) = 4x^2 - 2
+        // For n=2: (-1)^3 * H_2(x) = -(4x^2 - 2) = -4x^2 + 2
         DOGWavelet dog2 = new DOGWavelet(2, 1.0);
         Complex val2 = dog2.wavelet(x);
-        double expected2 = (4 * x * x - 2) * gaussian;
         
-        // Check that the pattern is correct (not exact due to normalization)
-        assertTrue("Values should follow Hermite pattern", 
-                  Math.abs(val1.getReal()) > 0 && Math.abs(val2.getReal()) > 0);
+        // For n=3: (-1)^4 * H_3(x) = H_3(x) = 8x^3 - 12x
+        DOGWavelet dog3 = new DOGWavelet(3, 1.0);
+        Complex val3 = dog3.wavelet(x);
+        
+        // Check the sign patterns
+        // n=1: Should be positive for x > 0 (since H_1(x) = 2x)
+        assertTrue("DOG n=1 should be positive for x > 0", val1.getReal() > 0);
+        
+        // n=2: At x=0, H_2(0) = -2, with (-1)^3 factor gives +2, should be positive
+        DOGWavelet dog2_at_0 = new DOGWavelet(2, 1.0);
+        Complex val2_at_0 = dog2_at_0.wavelet(0);
+        assertTrue("DOG n=2 should be positive at x=0", val2_at_0.getReal() > 0);
+        
+        // n=3: At x=0, H_3(0) = 0, should be zero
+        DOGWavelet dog3_at_0 = new DOGWavelet(3, 1.0);
+        Complex val3_at_0 = dog3_at_0.wavelet(0);
+        assertEquals("DOG n=3 should be zero at x=0", 0.0, val3_at_0.getReal(), COARSE_DELTA);
+        
+        // Check relative magnitudes follow Hermite polynomial growth
+        // Higher order polynomials should have larger values for |x| > 1
+        assertTrue("Higher order should have larger magnitude for |x| > 1", 
+                  Math.abs(val3.getReal()) > Math.abs(val1.getReal()));
     }
 
     /**
