@@ -129,9 +129,10 @@ public class PaulWaveletExample {
                 }
             }
             double detectedFreq = frequencies[maxScale];
-            double expectedFreq = 10 + (40 * tidx / (double)n);
+            double t = tidx / samplingRate;
+            double expectedFreq = 10 + (40 * t / 2.0);  // Must match line 85
             System.out.printf("  t=%.2f s: detected=%.1f Hz, expected=%.1f Hz\n",
-                            tidx / samplingRate, detectedFreq, expectedFreq);
+                            t, detectedFreq, expectedFreq);
         }
     }
     
