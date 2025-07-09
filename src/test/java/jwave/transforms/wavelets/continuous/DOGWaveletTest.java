@@ -221,6 +221,7 @@ public class DOGWaveletTest {
         // Compare values at several points
         double[] testPoints = {0.0, 0.5, 1.0, 1.5, 2.0};
         
+        double initialRatio = Double.NaN; // Initialize to an invalid value
         for (double t : testPoints) {
             Complex dogVal = dog.wavelet(t);
             Complex mexVal = mexican.wavelet(t);
@@ -229,8 +230,13 @@ public class DOGWaveletTest {
             // So we check the ratio is consistent
             if (Math.abs(mexVal.getReal()) > DELTA) {
                 double ratio = dogVal.getReal() / mexVal.getReal();
-                // The ratio should be consistent (approximately)
-                assertTrue("Values should be proportional", Math.abs(ratio) > 0);
+                if (Double.isNaN(initialRatio)) {
+                    initialRatio = ratio; // Capture the initial ratio
+                } else {
+                    // Assert subsequent ratios match the initial ratio within tolerance
+                    assertTrue("Ratios should be consistent across points", 
+                               Math.abs(ratio - initialRatio) < COARSE_DELTA);
+                }
             }
         }
     }
