@@ -233,6 +233,13 @@ public class MeyerWaveletTest {
     Complex largeTime = wavelet.wavelet(100);
     assertFalse("Should not produce NaN", Double.isNaN(largeTime.getReal()));
     assertFalse("Should not produce infinity", Double.isInfinite(largeTime.getReal()));
+    assertEquals("Should return zero beyond effective support", 0.0, largeTime.getReal(), DELTA);
+    
+    // Test at boundary of effective support
+    Complex atBoundary = wavelet.wavelet(15.0);
+    Complex beyondBoundary = wavelet.wavelet(15.1);
+    assertTrue("Should have value at boundary", Math.abs(atBoundary.getReal()) > 0);
+    assertEquals("Should be zero beyond boundary", 0.0, beyondBoundary.getReal(), DELTA);
     
     // Test at very small and large frequency values
     Complex smallFreq = wavelet.fourierTransform(1e-10);

@@ -181,6 +181,12 @@ public class MeyerWavelet extends ContinuousWavelet {
     // Meyer wavelet in time domain requires numerical approximation
     // We use a truncated Fourier series approximation
     
+    // Check if |t| is beyond effective support to avoid unnecessary computation
+    // and potential numerical underflow in exponential
+    if (Math.abs(t) > EFFECTIVE_SUPPORT_RADIUS) {
+      return new Complex(0.0, 0.0);
+    }
+    
     // For practical implementation, we approximate using the fact that
     // Meyer wavelet resembles a modulated sinc function
     double value = 0.0;
