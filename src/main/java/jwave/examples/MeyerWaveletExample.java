@@ -192,7 +192,7 @@ public class MeyerWaveletExample {
       }
     }
     
-    System.out.printf("%s\t%.1f\t\t\t%s\n", 
+    System.out.printf("%-15s %10.2f %20s\n", 
                      timeLabel, frequencies[maxFreqIdx], expectedFreq);
   }
 }
