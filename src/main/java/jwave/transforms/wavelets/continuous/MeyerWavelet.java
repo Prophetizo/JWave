@@ -60,6 +60,36 @@ public class MeyerWavelet extends ContinuousWavelet {
    * The value 25.0 provides a good balance between localization and smoothness.
    */
   private static final double TIME_DECAY_PARAMETER = 25.0;
+  
+  /**
+   * First harmonic amplitude for time domain approximation.
+   * This correction term improves the accuracy of the truncated Fourier series.
+   */
+  private static final double FIRST_HARMONIC_AMPLITUDE = 0.2;
+  
+  /**
+   * First harmonic frequency multiplier relative to center frequency.
+   * Set to 1.4 to capture higher frequency components.
+   */
+  private static final double FIRST_HARMONIC_FREQ_MULT = 1.4;
+  
+  /**
+   * Second harmonic amplitude for time domain approximation.
+   * This negative correction term helps balance the approximation.
+   */
+  private static final double SECOND_HARMONIC_AMPLITUDE = -0.1;
+  
+  /**
+   * Second harmonic frequency multiplier relative to center frequency.
+   * Set to 0.5 to capture lower frequency components.
+   */
+  private static final double SECOND_HARMONIC_FREQ_MULT = 0.5;
+  
+  /**
+   * Center frequency for time domain approximation.
+   * This corresponds to the peak frequency response of the Meyer wavelet.
+   */
+  private static final double TIME_DOMAIN_CENTER_FREQ = 0.7;
 
   /**
    * Default constructor.
@@ -94,15 +124,18 @@ public class MeyerWavelet extends ContinuousWavelet {
     // Core oscillation
     if (Math.abs(t) < 1e-10) {
       // At t=0, use the limit value
-      value = 0.7 * envelope;
+      value = TIME_DOMAIN_CENTER_FREQ * envelope;
     } else {
       // Approximation based on Meyer wavelet properties
-      double omega0 = 0.7; // Center frequency
-      value = Math.sin(omega0 * t) / t * envelope;
+      value = Math.sin(TIME_DOMAIN_CENTER_FREQ * t) / t * envelope;
       
       // Add correction terms for better approximation
-      value += 0.2 * Math.sin(1.4 * omega0 * t) / (1.4 * t) * envelope;
-      value -= 0.1 * Math.sin(0.5 * omega0 * t) / (0.5 * t) * envelope;
+      value += FIRST_HARMONIC_AMPLITUDE * 
+               Math.sin(FIRST_HARMONIC_FREQ_MULT * TIME_DOMAIN_CENTER_FREQ * t) / 
+               (FIRST_HARMONIC_FREQ_MULT * t) * envelope;
+      value += SECOND_HARMONIC_AMPLITUDE * 
+               Math.sin(SECOND_HARMONIC_FREQ_MULT * TIME_DOMAIN_CENTER_FREQ * t) / 
+               (SECOND_HARMONIC_FREQ_MULT * t) * envelope;
     }
     
     // Normalize
