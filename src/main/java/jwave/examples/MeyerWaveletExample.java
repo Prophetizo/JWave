@@ -72,13 +72,14 @@ public class MeyerWaveletExample {
     }
     
     // Show Fourier transform values (where Meyer is naturally defined)
-    System.out.println("\nMeyer Wavelet Fourier Transform:");
-    System.out.println("ω\t|Ψ(ω)|");
-    System.out.println("-----------------");
+    System.out.println("\nMeyer Wavelet Fourier Transform (complex-valued):");
+    System.out.println("ω\t|Ψ(ω)|\t\tRe[Ψ(ω)]\tIm[Ψ(ω)]");
+    System.out.println("---------------------------------------------");
     double[] freqPoints = {0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0, 10.0};
     for (double omega : freqPoints) {
       Complex value = meyerWavelet.fourierTransform(omega);
-      System.out.printf("%.1f\t%.6f\n", omega, value.getMag());
+      System.out.printf("%.1f\t%.6f\t%.6f\t%.6f\n", 
+                       omega, value.getMag(), value.getReal(), value.getImag());
     }
     
     // Create test signal with multiple frequency components

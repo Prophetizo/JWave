@@ -260,20 +260,25 @@ public class MeyerWaveletTest {
                    valuePos.getReal(), valueNeg.getReal(), DELTA);
     }
     
-    // Fourier transform should also have even symmetry for real part
-    // since Meyer wavelet is real-valued in time domain
+    // Fourier transform should have Hermitian symmetry for real-valued wavelet
+    // F(-ω) = F*(ω), which means real part even, imaginary part odd
     double[] freqPoints = {2.5, 3.0, 4.0, 5.0, 6.0};
     
     for (double omega : freqPoints) {
       Complex ftPos = wavelet.fourierTransform(omega);
       Complex ftNeg = wavelet.fourierTransform(-omega);
       
-      assertEquals("Fourier transform should have even symmetry", 
+      // Real part should be even: Re[F(-ω)] = Re[F(ω)]
+      assertEquals("Real part should have even symmetry", 
                    ftPos.getReal(), ftNeg.getReal(), DELTA);
-      assertEquals("Fourier transform should be real-valued", 
-                   0.0, ftPos.getImag(), DELTA);
-      assertEquals("Fourier transform should be real-valued", 
-                   0.0, ftNeg.getImag(), DELTA);
+      
+      // Imaginary part should be odd: Im[F(-ω)] = -Im[F(ω)]
+      assertEquals("Imaginary part should have odd symmetry", 
+                   ftPos.getImag(), -ftNeg.getImag(), DELTA);
+      
+      // For Hermitian symmetry: F(-ω) = F*(ω)
+      assertEquals("Magnitude should be symmetric", 
+                   ftPos.getMag(), ftNeg.getMag(), DELTA);
     }
   }
 

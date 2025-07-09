@@ -242,7 +242,13 @@ public class MeyerWavelet extends ContinuousWavelet {
     // Normalization
     value *= Math.sqrt(2.0 * Math.PI);
     
-    return new Complex(value, 0.0);
+    // Apply phase factor exp(iω/2) = cos(ω/2) + i·sin(ω/2)
+    // This ensures the Meyer wavelet is properly defined in frequency domain
+    double phase = omega / 2.0;
+    double realPart = value * Math.cos(phase);
+    double imagPart = value * Math.sin(phase);
+    
+    return new Complex(realPart, imagPart);
   }
 
   /**
