@@ -25,6 +25,10 @@ import jwave.datatypes.natives.Complex;
 import jwave.exceptions.JWaveException;
 import jwave.transforms.wavelets.continuous.ContinuousWavelet;
 import jwave.utils.MathUtils;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.RecursiveAction;
+import java.util.stream.IntStream;
 
 /**
  * Continuous Wavelet Transform (CWT) implementation.
@@ -405,5 +409,241 @@ public class ContinuousWaveletTransform extends BasicTransform {
    */
   public ContinuousWavelet getContinuousWavelet() {
     return _wavelet;
+  }
+
+  /**
+   * Perform parallel continuous wavelet transform on a signal.
+   * This method parallelizes across scales for improved performance.
+   * 
+   * @param signal input signal
+   * @param scales array of scale values to use
+   * @param samplingRate sampling rate of the signal (Hz)
+   * @return CWTResult containing the transform coefficients
+   */
+  public CWTResult transformParallel(double[] signal, double[] scales, double samplingRate) {
+    int signalLength = signal.length;
+    int nScales = scales.length;
+    
+    // Create time axis
+    double[] timeAxis = new double[signalLength];
+    double dt = 1.0 / samplingRate;
+    for (int i = 0; i < signalLength; i++) {
+      timeAxis[i] = i * dt;
+    }
+    
+    // Initialize coefficient matrix
+    Complex[][] coefficients = new Complex[nScales][signalLength];
+    
+    // Determine parallelism threshold
+    int parallelThreshold = getParallelThreshold(nScales, signalLength);
+    
+    if (nScales < parallelThreshold) {
+      // Fall back to sequential for small scale counts
+      return transform(signal, scales, samplingRate);
+    }
+    
+    // Use parallel streams for scale processing
+    IntStream.range(0, nScales).parallel().forEach(scaleIdx -> {
+      double scale = scales[scaleIdx];
+      
+      // For each time point in the signal
+      for (int timeIdx = 0; timeIdx < signalLength; timeIdx++) {
+        coefficients[scaleIdx][timeIdx] = computeCoefficient(signal, timeIdx, scale, samplingRate);
+      }
+    });
+    
+    return new CWTResult(coefficients, scales, timeAxis, samplingRate, _wavelet.getName());
+  }
+
+  /**
+   * Perform parallel FFT-based continuous wavelet transform for better performance.
+   * This method parallelizes across scales and uses FFT for convolution.
+   * 
+   * @param signal input signal
+   * @param scales array of scale values to use
+   * @param samplingRate sampling rate of the signal (Hz)
+   * @return CWTResult containing the transform coefficients
+   */
+  public CWTResult transformFFTParallel(double[] signal, double[] scales, double samplingRate) {
+    int signalLength = signal.length;
+    int nScales = scales.length;
+    
+    // Pad signal to next power of 2 for FFT efficiency
+    int paddedLength = MathUtils.nextPowerOfTwo(signalLength);
+    double[] paddedSignal = padSignal(signal, paddedLength);
+    
+    // Compute FFT of the signal (done once, shared across all scales)
+    Complex[] signalFFT = computeFFT(paddedSignal);
+    
+    // Create frequency axis
+    double[] omega = new double[paddedLength];
+    for (int i = 0; i < paddedLength; i++) {
+      omega[i] = 2.0 * Math.PI * i * samplingRate / paddedLength;
+      if (i > paddedLength / 2) {
+        omega[i] -= 2.0 * Math.PI * samplingRate;
+      }
+    }
+    
+    // Create time axis
+    double[] timeAxis = new double[signalLength];
+    double dt = 1.0 / samplingRate;
+    for (int i = 0; i < signalLength; i++) {
+      timeAxis[i] = i * dt;
+    }
+    
+    // Initialize coefficient matrix
+    Complex[][] coefficients = new Complex[nScales][signalLength];
+    
+    // Determine parallelism threshold
+    int parallelThreshold = getParallelThreshold(nScales, signalLength);
+    
+    if (nScales < parallelThreshold) {
+      // Fall back to sequential for small scale counts
+      return transformFFT(signal, scales, samplingRate);
+    }
+    
+    // Parallel processing across scales
+    IntStream.range(0, nScales).parallel().forEach(scaleIdx -> {
+      double scale = scales[scaleIdx];
+      
+      // Compute wavelet FFT at this scale
+      Complex[] waveletFFT = new Complex[paddedLength];
+      for (int i = 0; i < paddedLength; i++) {
+        waveletFFT[i] = _wavelet.fourierTransform(omega[i], scale, 0);
+        // Take complex conjugate for convolution
+        waveletFFT[i] = waveletFFT[i].conjugate();
+      }
+      
+      // Multiply in frequency domain
+      Complex[] product = new Complex[paddedLength];
+      for (int i = 0; i < paddedLength; i++) {
+        product[i] = signalFFT[i].mul(waveletFFT[i]);
+      }
+      
+      // Inverse FFT
+      Complex[] result = computeIFFT(product);
+      
+      // Extract relevant part and store
+      for (int timeIdx = 0; timeIdx < signalLength; timeIdx++) {
+        coefficients[scaleIdx][timeIdx] = result[timeIdx];
+      }
+    });
+    
+    return new CWTResult(coefficients, scales, timeAxis, samplingRate, _wavelet.getName());
+  }
+
+  /**
+   * Perform parallel continuous wavelet transform using ForkJoinPool for fine-grained control.
+   * This method allows custom parallelism level and is useful for very large transforms.
+   * 
+   * @param signal input signal
+   * @param scales array of scale values to use
+   * @param samplingRate sampling rate of the signal (Hz)
+   * @param parallelism the parallelism level (0 for default)
+   * @return CWTResult containing the transform coefficients
+   */
+  public CWTResult transformParallelCustom(double[] signal, double[] scales, double samplingRate, int parallelism) {
+    int signalLength = signal.length;
+    int nScales = scales.length;
+    
+    // Create time axis
+    double[] timeAxis = new double[signalLength];
+    double dt = 1.0 / samplingRate;
+    for (int i = 0; i < signalLength; i++) {
+      timeAxis[i] = i * dt;
+    }
+    
+    // Initialize coefficient matrix
+    Complex[][] coefficients = new Complex[nScales][signalLength];
+    
+    // Create custom ForkJoinPool if parallelism specified
+    ForkJoinPool pool = parallelism > 0 ? 
+        new ForkJoinPool(parallelism) : 
+        ForkJoinPool.commonPool();
+    
+    try {
+      // Submit parallel task
+      pool.submit(() -> {
+        IntStream.range(0, nScales).parallel().forEach(scaleIdx -> {
+          double scale = scales[scaleIdx];
+          
+          // For each time point in the signal
+          for (int timeIdx = 0; timeIdx < signalLength; timeIdx++) {
+            coefficients[scaleIdx][timeIdx] = computeCoefficient(signal, timeIdx, scale, samplingRate);
+          }
+        });
+      }).join();
+    } finally {
+      if (parallelism > 0) {
+        pool.shutdown();
+      }
+    }
+    
+    return new CWTResult(coefficients, scales, timeAxis, samplingRate, _wavelet.getName());
+  }
+
+  /**
+   * Determine the threshold for using parallel processing.
+   * 
+   * @param nScales number of scales
+   * @param signalLength length of signal
+   * @return threshold value
+   */
+  private int getParallelThreshold(int nScales, int signalLength) {
+    // Use parallel processing if we have enough scales to benefit
+    // and the signal is not too small
+    if (signalLength < 64) {
+      return Integer.MAX_VALUE; // Never parallelize very small signals
+    } else if (signalLength < 256) {
+      return 16; // Need at least 16 scales
+    } else {
+      return 8; // For larger signals, parallelize with 8+ scales
+    }
+  }
+
+  /**
+   * Recursive action for parallel CWT computation using Fork/Join framework.
+   * This provides more control over task granularity.
+   */
+  private class CWTTask extends RecursiveAction {
+    private final double[] signal;
+    private final double[] scales;
+    private final Complex[][] coefficients;
+    private final double samplingRate;
+    private final int startScale;
+    private final int endScale;
+    private static final int THRESHOLD = 4; // Minimum scales per task
+    
+    CWTTask(double[] signal, double[] scales, Complex[][] coefficients, 
+            double samplingRate, int startScale, int endScale) {
+      this.signal = signal;
+      this.scales = scales;
+      this.coefficients = coefficients;
+      this.samplingRate = samplingRate;
+      this.startScale = startScale;
+      this.endScale = endScale;
+    }
+    
+    @Override
+    protected void compute() {
+      if (endScale - startScale <= THRESHOLD) {
+        // Compute directly
+        for (int scaleIdx = startScale; scaleIdx < endScale; scaleIdx++) {
+          double scale = scales[scaleIdx];
+          for (int timeIdx = 0; timeIdx < signal.length; timeIdx++) {
+            coefficients[scaleIdx][timeIdx] = computeCoefficient(signal, timeIdx, scale, samplingRate);
+          }
+        }
+      } else {
+        // Fork into subtasks
+        int mid = startScale + (endScale - startScale) / 2;
+        CWTTask leftTask = new CWTTask(signal, scales, coefficients, samplingRate, startScale, mid);
+        CWTTask rightTask = new CWTTask(signal, scales, coefficients, samplingRate, mid, endScale);
+        
+        leftTask.fork();
+        rightTask.compute();
+        leftTask.join();
+      }
+    }
   }
 }
