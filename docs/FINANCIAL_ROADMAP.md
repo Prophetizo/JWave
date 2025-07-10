@@ -1,6 +1,12 @@
-# Immediate Actions Implementation Plan
+# Financial Package Roadmap for JWave
 
-## Priority Actions for Week 1-2
+**Status: PROPOSED - Not Yet Implemented**
+
+This document outlines a comprehensive plan for adding financial-specific wavelet analysis features to JWave. These features would extend JWave's capabilities for quantitative finance applications, particularly in high-frequency trading and market microstructure analysis.
+
+## Proposed Implementation Plan
+
+### Priority Actions for Implementation
 
 ### 1. Create `jwave.transforms.financial` Package in JWave
 

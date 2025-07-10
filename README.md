@@ -7,7 +7,9 @@
 
 ## Introduction
 
-Java implementation of a **Discrete Fourier Transform (DFT)**, a **Fast Wavelet Transform (FWT)**, a **Wavelet Packet Transform (WPT)**, and a **Maximal Overlap Discrete Wavelet Transform (MODWT)** algorithm. All algorithms are available **in 1-D, 2-D, and 3-D** (except MODWT which is currently 1-D). The wavelet transform algorithms are **using** normalized orthogonal or if available **orthonormal** wavelets. The common **wavelets like Haar, Coiflet, Daubechies, Symlets, and Legendre** are available. Additionally there are also some Bi-Orthogonal and unusal wavelets implemented - in total around 50 wavelets.
+Java implementation of a **Discrete Fourier Transform (DFT)**, a **Fast Wavelet Transform (FWT)**, a **Wavelet Packet Transform (WPT)**, a **Continuous Wavelet Transform (CWT)**, and a **Maximal Overlap Discrete Wavelet Transform (MODWT)** algorithm. All algorithms are available **in 1-D, 2-D, and 3-D** (except MODWT which is currently 1-D, and CWT which is 1-D). The wavelet transform algorithms are **using** normalized orthogonal or if available **orthonormal** wavelets. The common **wavelets like Haar, Coiflet, Daubechies, Symlets, and Legendre** are available. Additionally there are also some Bi-Orthogonal and unusal wavelets implemented - in total around 50 wavelets.
+
+**New in v2.0.0**: Added support for Continuous Wavelet Transform (CWT) with specialized continuous wavelets including Morlet, Mexican Hat, Paul, DOG (Derivative of Gaussian), and Meyer wavelets.
 
 The implementation of JWave is based on several software design patterns and - hopefully - appears therefore user-friendly.
 
@@ -41,6 +43,21 @@ Additionally the application of the transform - independent of using some differ
 ### HowTo
 
 For a quick test, pull the repository and then: *ant && ant test*. This builds a JWave.jar and the corresponding unit tests. Afterwards *all* units test are executed.
+
+### CWT - Continuous Wavelet Transform
+
+The CWT provides time-frequency analysis of signals, particularly useful for non-stationary signals where frequency content changes over time:
+
+- **Scale-based analysis** - analyze signals at multiple scales simultaneously
+- **Time-frequency localization** - identify when specific frequencies occur
+- **Complex wavelet support** - extract phase information for advanced analysis
+- **FFT-based implementation** - efficient computation using convolution theorem
+
+Key applications include:
+- **Signal characterization** - identify transient features and frequency modulation
+- **Pattern recognition** - detect specific waveforms at different scales
+- **Edge detection** - using Mexican Hat or DOG wavelets
+- **Time-frequency visualization** - create scalograms for signal analysis
 
 ### MODWT - Maximal Overlap Discrete Wavelet Transform
 
@@ -179,6 +196,30 @@ for( int level = 0; level < 3; level++ ) {
 double[ ] denoised = modwt.inverseMODWT( coeffs );
 ```
 
+**example for 1-D CWT (Continuous Wavelet Transform):**
+```Java
+// CWT for time-frequency analysis
+Transform t = new Transform( new ContinuousWaveletTransform( 
+    new MorletWavelet( 6.0 ) ) ); // Morlet with omega0 = 6.0
+
+double[ ] signal = generateChirpSignal( ); // frequency-varying signal
+
+// Analyze at specific scales
+double[ ] scales = { 1.0, 2.0, 4.0, 8.0, 16.0, 32.0 };
+Complex[ ][ ] cwt = new Complex[scales.length][signal.length];
+
+for( int i = 0; i < scales.length; i++ ) {
+    cwt[i] = t.forward( signal, scales[i] );
+}
+
+// Available continuous wavelets:
+// - MorletWavelet: time-frequency analysis
+// - MexicanHatWavelet: edge detection
+// - PaulWavelet: oscillatory pattern detection
+// - DOGWavelet: multi-scale feature detection
+// - MeyerWavelet: smooth frequency localization
+```
+
 **Have fun! :-)**
 
 ## CONTACT
@@ -211,9 +252,23 @@ THE SOFTWARE.
 
 ## VERSION
 
-**JWave is in version 250105.**
+**JWave is in version 2.0.0**
 
 ## CHANGE LOG
+
+version **2.0.0**:
+- Added Continuous Wavelet Transform (CWT) implementation
+ - Support for time-frequency analysis with scale parameter
+ - FFT-based convolution for efficient computation
+ - Perfect for analyzing non-stationary signals
+- Implemented specialized continuous wavelets:
+ - **MorletWavelet**: Complex wavelet for time-frequency analysis
+ - **MexicanHatWavelet**: Second derivative of Gaussian for edge detection
+ - **PaulWavelet**: Higher-order complex wavelet for oscillatory patterns
+ - **DOGWavelet**: Derivative of Gaussian for multi-scale analysis
+ - **MeyerWavelet**: Smooth wavelet with compact frequency support
+- Added comprehensive examples and unit tests for CWT
+- Performance optimizations with filter caching for MODWT
 
 version **250105**:
 - added Maximal Overlap Discrete Wavelet Transform (MODWT) implementation

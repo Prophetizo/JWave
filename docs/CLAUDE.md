@@ -48,7 +48,7 @@ JWave uses a Strategy/Builder pattern with a Transform facade:
 3. **FastWaveletTransform (FWT)** - Standard pyramid algorithm (requires 2^n length)
 4. **WaveletPacketTransform (WPT)** - Full decomposition tree
 5. **MODWTTransform** - Maximal Overlap DWT (handles arbitrary length, shift-invariant)
-6. **ContinuousWaveletTransform (CWT)** - Time-frequency analysis
+6. **ContinuousWaveletTransform (CWT)** - Time-frequency analysis (v2.0.0)
 7. **AncientEgyptianDecomposition** - Wrapper for handling odd-length signals with FWT/WPT
 8. **ShiftingWaveletTransform** - Alternative shift-based implementation
 
@@ -60,7 +60,7 @@ JWave uses a Strategy/Builder pattern with a Transform facade:
   - `symlets/` - Symlets 2-20
   - `coiflet/` - Coiflets 1-5
   - `biorthogonal/` - BiOrthogonal wavelets
-  - `continuous/` - CWT wavelets (Morlet, Mexican Hat, Paul, DOG, Meyer)
+  - `continuous/` - CWT wavelets (Morlet, Mexican Hat, Paul, DOG, Meyer) - Added in v2.0.0
 - `jwave.datatypes/` - Data structures (Block, Line, Space, Complex)
 - `jwave.compressions/` - Compression utilities
 - `jwave.exceptions/` - Custom exception hierarchy
