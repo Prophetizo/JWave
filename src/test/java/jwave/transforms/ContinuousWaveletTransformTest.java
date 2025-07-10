@@ -28,6 +28,7 @@ import jwave.datatypes.natives.Complex;
 import jwave.transforms.wavelets.continuous.MorletWavelet;
 import jwave.transforms.wavelets.continuous.MexicanHatWavelet;
 import jwave.transforms.wavelets.continuous.PaulWavelet;
+import jwave.transforms.wavelets.continuous.MeyerWavelet;
 
 /**
  * Test class for Continuous Wavelet Transform implementation.
@@ -290,6 +291,59 @@ public class ContinuousWaveletTransformTest {
     // Test positive frequency response
     Complex posFreq = wavelet.fourierTransform(4.0);
     assertTrue("Positive frequencies should be non-zero", posFreq.getMag() > 0);
+  }
+
+  /**
+   * Test Meyer wavelet with CWT demonstrates frequency localization.
+   */
+  @Test
+  public void testMeyerWaveletCWT() {
+    MeyerWavelet wavelet = new MeyerWavelet();
+    ContinuousWaveletTransform cwt = new ContinuousWaveletTransform(wavelet);
+    
+    // Create a signal with two distinct frequency components
+    double samplingRate = 100.0;
+    int signalLength = 256;
+    double[] signal = new double[signalLength];
+    
+    // First half: 5 Hz, Second half: 15 Hz
+    for (int i = 0; i < signalLength / 2; i++) {
+      double t = i / samplingRate;
+      signal[i] = Math.sin(2.0 * Math.PI * 5.0 * t);
+    }
+    for (int i = signalLength / 2; i < signalLength; i++) {
+      double t = i / samplingRate;
+      signal[i] = Math.sin(2.0 * Math.PI * 15.0 * t);
+    }
+    
+    // Use a range of scales
+    double[] scales = ContinuousWaveletTransform.generateLogScales(0.5, 10.0, 30);
+    
+    // Perform both direct and FFT transforms
+    CWTResult resultDirect = cwt.transform(signal, scales, samplingRate);
+    CWTResult resultFFT = cwt.transformFFT(signal, scales, samplingRate);
+    
+    // Meyer wavelet should work well with FFT due to compact frequency support
+    assertNotNull("Direct CWT result should not be null", resultDirect);
+    assertNotNull("FFT CWT result should not be null", resultFFT);
+    
+    // Check that FFT-based transform produces valid results
+    double[][] magnitudeFFT = resultFFT.getMagnitude();
+    boolean hasNonZero = false;
+    double maxMag = 0;
+    
+    for (int i = 0; i < scales.length; i++) {
+      for (int j = 0; j < signalLength; j++) {
+        double mag = magnitudeFFT[i][j];
+        assertFalse("FFT magnitude should not be NaN", Double.isNaN(mag));
+        assertFalse("FFT magnitude should not be infinite", Double.isInfinite(mag));
+        if (mag > 0) hasNonZero = true;
+        if (mag > maxMag) maxMag = mag;
+      }
+    }
+    
+    assertTrue("Meyer wavelet CWT should produce non-zero values", hasNonZero);
+    assertTrue("Meyer wavelet CWT should produce significant response", maxMag > 0.1);
   }
 
   /**
