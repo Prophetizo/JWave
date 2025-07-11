@@ -117,7 +117,7 @@ public class ParallelWaveletPacketTransform extends PooledWaveletPacketTransform
             
         int maxLevel = calcExponent(arrHilb.length);
         if (level < 0 || level > maxLevel)
-            throw new JWaveFailure("WaveletPacketTransform#reverse - invalid level");
+            throw new JWaveFailure("ParallelWaveletPacketTransform#reverse - invalid level");
             
         int length = arrHilb.length;
         double[] arrTime = Arrays.copyOf(arrHilb, length);
