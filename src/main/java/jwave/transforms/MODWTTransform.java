@@ -109,13 +109,24 @@ public class MODWTTransform extends WaveletTransform {
      * At level 13, filter sizes can reach ~77K coefficients for longer wavelets.
      */
     private static final int MAX_DECOMPOSITION_LEVEL = 13;
+
+    /**
+     * Constructor for MODWTTransform.
+     * @param wavelet the wavelet to use
+     * @param fftThreshold optional threshold for FFT-based convolution (default is 4096)
+     */
+    public MODWTTransform(Wavelet wavelet, int fftThreshold) {
+        super(wavelet);
+        this.fftConvolutionThreshold = fftThreshold;
+    }
     
     /**
      * Threshold for switching between direct and FFT-based convolution.
      * When signal length * filter length exceeds this value, FFT is more efficient.
      * This is an empirically derived value that balances FFT overhead vs O(N²) complexity.
+     * The default value is 4096, but it can be configured via the constructor or setter method.
      */
-    private static final int FFT_CONVOLUTION_THRESHOLD = 4096;
+    private int fftConvolutionThreshold = 4096;
     
     /**
      * Enum to specify convolution method.
