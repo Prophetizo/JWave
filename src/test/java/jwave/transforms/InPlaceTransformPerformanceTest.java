@@ -92,13 +92,13 @@ public class InPlaceTransformPerformanceTest {
     
     @Test
     public void testMemoryEfficiency() throws JWaveException {
-        System.out.println("\n=== Memory Efficiency Test ===");
+        logger.info("\n=== Memory Efficiency Test ===");
         
         int[] sizes = {1024, 4096, 16384, 65536};
         Daubechies4 wavelet = new Daubechies4();
         
-        System.out.println("Size    | Standard Allocations | In-Place Allocations | Reduction");
-        System.out.println("--------|---------------------|---------------------|----------");
+        logger.info("Size    | Standard Allocations | In-Place Allocations | Reduction");
+        logger.info("--------|---------------------|---------------------|----------");
         
         for (int size : sizes) {
             double[] signal = new double[size];
