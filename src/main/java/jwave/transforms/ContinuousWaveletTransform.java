@@ -48,6 +48,15 @@ public class ContinuousWaveletTransform extends BasicTransform {
   private ContinuousWavelet _wavelet;
 
   /**
+   * Parallelization thresholds for different signal sizes.
+   * These constants define when to use parallel processing based on problem size.
+   */
+  private static final int TINY_SIGNAL_LENGTH = 64;      // Signals smaller than this are never parallelized
+  private static final int SMALL_SIGNAL_LENGTH = 256;    // Small signals need more scales to benefit from parallelization
+  private static final int SCALES_THRESHOLD_SMALL = 16;  // Minimum scales for small signals
+  private static final int SCALES_THRESHOLD_LARGE = 8;   // Minimum scales for larger signals
+
+  /**
    * Padding type for boundary handling.
    */
   public enum PaddingType {
@@ -582,12 +591,12 @@ public class ContinuousWaveletTransform extends BasicTransform {
   private int getParallelThreshold(int nScales, int signalLength) {
     // Use parallel processing if we have enough scales to benefit
     // and the signal is not too small
-    if (signalLength < 64) {
+    if (signalLength < TINY_SIGNAL_LENGTH) {
       return Integer.MAX_VALUE; // Never parallelize very small signals
-    } else if (signalLength < 256) {
-      return 16; // Need at least 16 scales
+    } else if (signalLength < SMALL_SIGNAL_LENGTH) {
+      return SCALES_THRESHOLD_SMALL; // Small signals need more scales to benefit
     } else {
-      return 8; // For larger signals, parallelize with 8+ scales
+      return SCALES_THRESHOLD_LARGE; // For larger signals, parallelize with fewer scales
     }
   }
 
