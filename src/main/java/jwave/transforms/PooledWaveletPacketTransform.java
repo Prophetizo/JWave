@@ -39,16 +39,16 @@ public class PooledWaveletPacketTransform extends WaveletPacketTransform {
         int h = length;
         int l = 0;
         
-        while (h >= transformWavelength && l < level) {
-            int g = length / h; // number of packets at this level
-            
-            // Get buffer for this level's packet size
-            double[] iBuf = pool.borrowDoubleArray(h);
-            
-            try {
+        // Pre-allocate the largest buffer we'll need (first level uses full length)
+        double[] iBuf = pool.borrowDoubleArray(length);
+        
+        try {
+            while (h >= transformWavelength && l < level) {
+                int g = length / h; // number of packets at this level
+                
                 for (int p = 0; p < g; p++) {
-                    // Clear the buffer
-                    Arrays.fill(iBuf, 0.0);
+                    // Clear only the portion we're using
+                    Arrays.fill(iBuf, 0, h, 0.0);
                     
                     int offset = p * h;
                     for (int i = 0; i < h; i++)
@@ -59,15 +59,15 @@ public class PooledWaveletPacketTransform extends WaveletPacketTransform {
                     for (int i = 0; i < h; i++)
                         arrHilb[offset + i] = oBuf[i];
                 }
-            } finally {
-                pool.returnDoubleArray(iBuf);
+                
+                h = h >> 1;
+                l++;
             }
             
-            h = h >> 1;
-            l++;
+            return arrHilb;
+        } finally {
+            pool.returnDoubleArray(iBuf);
         }
-        
-        return arrHilb;
     }
     
     @Override
@@ -91,18 +91,21 @@ public class PooledWaveletPacketTransform extends WaveletPacketTransform {
         for (int l = level; l < steps; l++)
             h = h << 1; // begin reverse transform at certain level
         
-        // No pre-allocation of buffer here, will allocate as needed
+        // Pre-allocate buffer for the largest packet size we'll process
+        // In reverse, we start small and go large, so we need to calculate max size
+        int maxH = h;
+        while (maxH << 1 <= arrTime.length && maxH << 1 >= transformWavelength) {
+            maxH = maxH << 1;
+        }
+        double[] iBuf = pool.borrowDoubleArray(maxH);
         
-        while (h <= arrTime.length && h >= transformWavelength) {
-            int g = length / h; // number of packets at this level
-            
-            // Get buffer for this level's packet size
-            double[] iBuf = pool.borrowDoubleArray(h);
-            
-            try {
+        try {
+            while (h <= arrTime.length && h >= transformWavelength) {
+                int g = length / h; // number of packets at this level
+                
                 for (int p = 0; p < g; p++) {
-                    // Clear the buffer
-                    Arrays.fill(iBuf, 0.0);
+                    // Clear only the portion we're using
+                    Arrays.fill(iBuf, 0, h, 0.0);
                     
                     int offset = p * h;
                     for (int i = 0; i < h; i++)
@@ -113,13 +116,13 @@ public class PooledWaveletPacketTransform extends WaveletPacketTransform {
                     for (int i = 0; i < h; i++)
                         arrTime[offset + i] = oBuf[i];
                 }
-            } finally {
-                pool.returnDoubleArray(iBuf);
+                
+                h = h << 1;
             }
             
-            h = h << 1;
+            return arrTime;
+        } finally {
+            pool.returnDoubleArray(iBuf);
         }
-        
-        return arrTime;
     }
 }
