@@ -29,6 +29,7 @@ import org.junit.After;
 import jwave.datatypes.natives.Complex;
 import jwave.transforms.wavelets.continuous.MorletWavelet;
 import jwave.transforms.wavelets.continuous.MexicanHatWavelet;
+import jwave.transforms.CWTResult;
 import java.util.Random;
 
 /**
@@ -44,7 +45,14 @@ import java.util.Random;
  */
 public class CWTParallelPerformanceTest {
 
-  private static final double DELTA = 1e-10;
+  /**
+   * Tolerance for floating-point comparisons.
+   * Set to 1e-8 to account for small variations due to:
+   * - Non-associativity of floating-point operations
+   * - Different operation ordering in parallel execution
+   * - Accumulated rounding errors
+   */
+  private static final double DELTA = 1e-8;
   private static final int WARMUP_RUNS = 3;
   private static final int BENCHMARK_RUNS = 5;
   private static final long RANDOM_SEED = 42L; // Fixed seed for reproducibility
@@ -413,20 +421,43 @@ public class CWTParallelPerformanceTest {
     // Test with Morlet
     ContinuousWaveletTransform cwtMorlet = new ContinuousWaveletTransform(morletWavelet);
     long start = System.nanoTime();
-    cwtMorlet.transformParallel(testSignal, scales, samplingRate);
+    CWTResult morletResult = cwtMorlet.transformParallel(testSignal, scales, samplingRate);
     double morletTime = (System.nanoTime() - start) / 1_000_000.0;
     
     // Test with Mexican Hat
     ContinuousWaveletTransform cwtMexican = new ContinuousWaveletTransform(mexicanHatWavelet);
     start = System.nanoTime();
-    cwtMexican.transformParallel(testSignal, scales, samplingRate);
+    CWTResult mexicanResult = cwtMexican.transformParallel(testSignal, scales, samplingRate);
     double mexicanTime = (System.nanoTime() - start) / 1_000_000.0;
     
     System.out.println("Morlet wavelet: " + String.format("%.2f", morletTime) + " ms");
     System.out.println("Mexican Hat wavelet: " + String.format("%.2f", mexicanTime) + " ms");
     
-    // Both should complete successfully
-    assertTrue("Morlet transform should complete", morletTime > 0);
-    assertTrue("Mexican Hat transform should complete", mexicanTime > 0);
+    // Verify results are valid and reasonable
+    assertNotNull("Morlet result should not be null", morletResult);
+    assertNotNull("Mexican Hat result should not be null", mexicanResult);
+    
+    // Check dimensions match expected values
+    assertEquals("Morlet result should have correct number of scales", 
+                 scales.length, morletResult.getNumberOfScales());
+    assertEquals("Mexican Hat result should have correct number of scales", 
+                 scales.length, mexicanResult.getNumberOfScales());
+    assertEquals("Morlet result should have correct signal length", 
+                 testSignal.length, morletResult.getNumberOfTimePoints());
+    assertEquals("Mexican Hat result should have correct signal length", 
+                 testSignal.length, mexicanResult.getNumberOfTimePoints());
+    
+    // Verify timing is reasonable (not too fast, not too slow)
+    double minExpectedTime = 1.0; // At least 1ms for a non-trivial computation
+    double maxExpectedTime = 60000.0; // Should complete within 1 minute
+    assertTrue("Morlet transform time should be reasonable (" + morletTime + " ms)", 
+               morletTime >= minExpectedTime && morletTime <= maxExpectedTime);
+    assertTrue("Mexican Hat transform time should be reasonable (" + mexicanTime + " ms)", 
+               mexicanTime >= minExpectedTime && mexicanTime <= maxExpectedTime);
+    
+    // Performance comparison - Mexican Hat is simpler and should typically be faster
+    // but we allow some margin for variability
+    System.out.println("Performance ratio (Morlet/Mexican Hat): " + 
+                       String.format("%.2f", morletTime / mexicanTime));
   }
 }

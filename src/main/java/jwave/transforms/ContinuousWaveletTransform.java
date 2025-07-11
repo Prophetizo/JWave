@@ -578,6 +578,12 @@ public class ContinuousWaveletTransform extends BasicTransform {
     int signalLength = signal.length;
     int nScales = scales.length;
     
+    // Check if we should use parallel processing
+    if (!shouldUseParallel(nScales, signalLength)) {
+      // Fall back to sequential for small scale counts
+      return transform(signal, scales, samplingRate);
+    }
+    
     // Create time axis and initialize coefficient matrix
     double[] timeAxis = createTimeAxis(signalLength, samplingRate);
     Complex[][] coefficients = initializeCoefficients(nScales, signalLength);
