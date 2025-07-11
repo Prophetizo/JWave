@@ -3,6 +3,7 @@ package jwave.transforms;
 import jwave.exceptions.JWaveException;
 import jwave.transforms.wavelets.daubechies.Daubechies4;
 import jwave.transforms.wavelets.haar.Haar1;
+import jwave.utils.TestUtils;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -92,13 +93,15 @@ public class InPlaceTransformPerformanceTest {
     
     @Test
     public void testMemoryEfficiency() throws JWaveException {
-        logger.info("\n=== Memory Efficiency Test ===");
+        TestUtils.skipIfPerformanceTestsDisabled();
+        
+        System.out.println("\n=== Memory Efficiency Test ===");
         
         int[] sizes = {1024, 4096, 16384, 65536};
         Daubechies4 wavelet = new Daubechies4();
         
-        logger.info("Size    | Standard Allocations | In-Place Allocations | Reduction");
-        logger.info("--------|---------------------|---------------------|----------");
+        System.out.println("Size    | Standard Allocations | In-Place Allocations | Reduction");
+        System.out.println("--------|---------------------|---------------------|----------");
         
         for (int size : sizes) {
             double[] signal = new double[size];
@@ -136,6 +139,8 @@ public class InPlaceTransformPerformanceTest {
     
     @Test
     public void testPerformanceComparison() throws JWaveException {
+        TestUtils.skipIfPerformanceTestsDisabled();
+        
         System.out.println("\n=== Performance Comparison Test ===");
         
         int[] sizes = {1024, 4096, 16384, 65536};
