@@ -141,7 +141,7 @@ public class MODWTTransform extends WaveletTransform {
      * 
      * @see #performConvolution(double[], double[], boolean)
      */
-    private int fftConvolutionThreshold = 4096;
+    protected int fftConvolutionThreshold = 4096;
     
     /**
      * Enum to specify convolution method.
@@ -167,7 +167,7 @@ public class MODWTTransform extends WaveletTransform {
     private ConvolutionMethod convolutionMethod = ConvolutionMethod.AUTO;
     
     // Reference to FFT transform for FFT-based convolution
-    private transient FastFourierTransform fft;
+    protected transient FastFourierTransform fft;
 
     /**
      * Constructor for the MODWTTransform.
@@ -449,7 +449,7 @@ public class MODWTTransform extends WaveletTransform {
      * Computes the base MODWT filters from the wavelet coefficients.
      * Thread-safe through double-checked locking pattern.
      */
-    private void initializeFilterCache() {
+    protected void initializeFilterCache() {
         if (!cacheInitialized || g_modwt_base == null) {
             synchronized (this) {
                 // Double-check inside synchronized block
@@ -487,7 +487,7 @@ public class MODWTTransform extends WaveletTransform {
      * Gets the cached upsampled G filter for the specified level.
      * Creates and caches it if not already present.
      */
-    private double[] getCachedGFilter(int level) {
+    protected double[] getCachedGFilter(int level) {
         initializeFilterCache();
         
         // Check if already cached
@@ -520,7 +520,7 @@ public class MODWTTransform extends WaveletTransform {
      * Gets the cached upsampled H filter for the specified level.
      * Creates and caches it if not already present.
      */
-    private double[] getCachedHFilter(int level) {
+    protected double[] getCachedHFilter(int level) {
         initializeFilterCache();
         
         // Check if already cached
@@ -637,7 +637,7 @@ public class MODWTTransform extends WaveletTransform {
      * @param adjoint If true, performs adjoint (transpose) convolution
      * @return The convolution result with the same length as the signal
      */
-    private double[] performConvolution(double[] signal, double[] filter, boolean adjoint) {
+    protected double[] performConvolution(double[] signal, double[] filter, boolean adjoint) {
         boolean useFFT = false;
         
         switch (convolutionMethod) {
