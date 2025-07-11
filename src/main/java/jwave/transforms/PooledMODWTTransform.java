@@ -134,37 +134,25 @@ public class PooledMODWTTransform extends MODWTTransform {
      * Performs circular convolution using pooled arrays.
      */
     private double[] circularConvolvePooled(double[] signal, double[] filter) {
-        int N = signal.length;
-        int M = filter.length;
-        
-        ArrayBufferPool pool = ArrayBufferPool.getInstance();
-        double[] output = pool.borrowDoubleArray(N);
-        
-        try {
-            // Clear the array in case it has old data
-            Arrays.fill(output, 0, N, 0.0);
-            
-            for (int n = 0; n < N; n++) {
-                double sum = 0.0;
-                for (int m = 0; m < M; m++) {
-                    int signalIndex = Math.floorMod(n - m, N);
-                    sum += signal[signalIndex] * filter[m];
-                }
-                output[n] = sum;
-            }
-            
-            // Return a copy and return the buffer to the pool
-            double[] result = Arrays.copyOf(output, N);
-            return result;
-        } finally {
-            pool.returnDoubleArray(output);
-        }
+        return circularConvolvePooledHelper(signal, filter, false);
     }
     
     /**
      * Performs adjoint circular convolution using pooled arrays.
      */
     private double[] circularConvolveAdjointPooled(double[] signal, double[] filter) {
+        return circularConvolvePooledHelper(signal, filter, true);
+    }
+    
+    /**
+     * Helper method for both forward and adjoint circular convolution using pooled arrays.
+     * 
+     * @param signal The input signal
+     * @param filter The filter coefficients
+     * @param adjoint If true, performs adjoint convolution (n+m indexing), otherwise forward (n-m indexing)
+     * @return The convolution result
+     */
+    private double[] circularConvolvePooledHelper(double[] signal, double[] filter, boolean adjoint) {
         int N = signal.length;
         int M = filter.length;
         
@@ -178,15 +166,15 @@ public class PooledMODWTTransform extends MODWTTransform {
             for (int n = 0; n < N; n++) {
                 double sum = 0.0;
                 for (int m = 0; m < M; m++) {
-                    int signalIndex = Math.floorMod(n + m, N);
+                    // The only difference between forward and adjoint is the sign in the index calculation
+                    int signalIndex = adjoint ? Math.floorMod(n + m, N) : Math.floorMod(n - m, N);
                     sum += signal[signalIndex] * filter[m];
                 }
                 output[n] = sum;
             }
             
             // Return a copy and return the buffer to the pool
-            double[] result = Arrays.copyOf(output, N);
-            return result;
+            return Arrays.copyOf(output, N);
         } finally {
             pool.returnDoubleArray(output);
         }
@@ -196,6 +184,25 @@ public class PooledMODWTTransform extends MODWTTransform {
      * Performs circular convolution using FFT with pooled arrays.
      */
     private double[] circularConvolveFFTPooled(double[] signal, double[] filter) {
+        return circularConvolveFFTPooledHelper(signal, filter, false);
+    }
+    
+    /**
+     * Performs the adjoint of circular convolution using FFT with pooled arrays.
+     */
+    private double[] circularConvolveFFTAdjointPooled(double[] signal, double[] filter) {
+        return circularConvolveFFTPooledHelper(signal, filter, true);
+    }
+    
+    /**
+     * Helper method for FFT-based circular convolution (both forward and adjoint).
+     * 
+     * @param signal The input signal
+     * @param filter The filter coefficients
+     * @param adjoint If true, performs adjoint operation (multiply by conjugate)
+     * @return The convolution result
+     */
+    private double[] circularConvolveFFTPooledHelper(double[] signal, double[] filter, boolean adjoint) {
         int N = signal.length;
         
         ArrayBufferPool pool = ArrayBufferPool.getInstance();
@@ -237,103 +244,22 @@ public class PooledMODWTTransform extends MODWTTransform {
             // Using mul() would create new Complex instances, replacing our pooled objects
             // and defeating the purpose of the pool.
             for (int i = 0; i < N; i++) {
-                double real = signalFFT[i].getReal() * filterFFT[i].getReal() - 
-                              signalFFT[i].getImag() * filterFFT[i].getImag();
-                double imag = signalFFT[i].getReal() * filterFFT[i].getImag() + 
-                              signalFFT[i].getImag() * filterFFT[i].getReal();
-                productFFT[i].setReal(real);
-                productFFT[i].setImag(imag);
-            }
-            
-            // Inverse FFT - reuse productFFT array for result
-            // Note: FFT.reverse() returns a new array internally. By using PooledFastFourierTransform
-            // in the constructor, we minimize allocations in the conversion between double[] and Complex[].
-            // The core FFT algorithm allocations are harder to eliminate without modifying the FFT itself.
-            inversed = fft.reverse(productFFT);
-            
-            // Extract real part directly
-            for (int i = 0; i < N; i++) {
-                output[i] = inversed[i].getReal();
-            }
-            
-            // Return a copy
-            // TODO: The Arrays.copyOf() allocates a new array, partially defeating the purpose
-            // of pooling. A better API would allow the caller to provide an output buffer or
-            // use a callback pattern. However, this would require changing the parent class API.
-            // For now, we still benefit from pooling the intermediate arrays used in computation.
-            return Arrays.copyOf(output, N);
-            
-        } finally {
-            // Return all borrowed arrays to the pool
-            pool.returnDoubleArray(paddedFilter);
-            pool.returnComplexArray(signalComplex);
-            pool.returnComplexArray(filterComplex);
-            pool.returnComplexArray(productFFT);
-            pool.returnDoubleArray(output);
-            
-            // Return FFT-allocated arrays if they were created
-            // These arrays are allocated by FFT operations and need to be returned to prevent memory leaks
-            if (signalFFT != null) {
-                pool.returnComplexArray(signalFFT);
-            }
-            if (filterFFT != null) {
-                pool.returnComplexArray(filterFFT);
-            }
-            if (inversed != null) {
-                pool.returnComplexArray(inversed);
-            }
-        }
-    }
-    
-    /**
-     * Performs the adjoint of circular convolution using FFT with pooled arrays.
-     */
-    private double[] circularConvolveFFTAdjointPooled(double[] signal, double[] filter) {
-        int N = signal.length;
-        
-        ArrayBufferPool pool = ArrayBufferPool.getInstance();
-        
-        // Borrow arrays from pool
-        double[] paddedFilter = pool.borrowDoubleArray(N);
-        Complex[] signalComplex = pool.borrowComplexArray(N);
-        Complex[] filterComplex = pool.borrowComplexArray(N);
-        Complex[] productFFT = pool.borrowComplexArray(N);
-        double[] output = pool.borrowDoubleArray(N);
-        
-        Complex[] signalFFT = null;
-        Complex[] filterFFT = null;
-        Complex[] inversed = null;
-        
-        try {
-            // Clear arrays
-            Arrays.fill(paddedFilter, 0, N, 0.0);
-            
-            // Wrap filter to signal length
-            for (int i = 0; i < filter.length; i++) {
-                paddedFilter[i % N] += filter[i];
-            }
-            
-            // Convert to complex arrays
-            for (int i = 0; i < N; i++) {
-                signalComplex[i].setReal(signal[i]);
-                signalComplex[i].setImag(0);
-                filterComplex[i].setReal(paddedFilter[i]);
-                filterComplex[i].setImag(0);
-            }
-            
-            // Compute FFTs
-            signalFFT = fft.forward(signalComplex);
-            filterFFT = fft.forward(filterComplex);
-            
-            // For the adjoint operation, multiply by conjugate of filter FFT
-            // IMPORTANT: Perform in-place to avoid allocating new Complex objects.
-            // Using mul() and conjugate() would create new instances.
-            for (int i = 0; i < N; i++) {
-                // Conjugate of filter is (real, -imag)
-                double real = signalFFT[i].getReal() * filterFFT[i].getReal() + 
-                              signalFFT[i].getImag() * filterFFT[i].getImag();
-                double imag = signalFFT[i].getImag() * filterFFT[i].getReal() - 
-                              signalFFT[i].getReal() * filterFFT[i].getImag();
+                double sigReal = signalFFT[i].getReal();
+                double sigImag = signalFFT[i].getImag();
+                double filReal = filterFFT[i].getReal();
+                double filImag = filterFFT[i].getImag();
+                
+                double real, imag;
+                if (adjoint) {
+                    // For adjoint: multiply by conjugate of filter (real, -imag)
+                    real = sigReal * filReal + sigImag * filImag;
+                    imag = sigImag * filReal - sigReal * filImag;
+                } else {
+                    // For forward: standard complex multiplication
+                    real = sigReal * filReal - sigImag * filImag;
+                    imag = sigReal * filImag + sigImag * filReal;
+                }
+                
                 productFFT[i].setReal(real);
                 productFFT[i].setImag(imag);
             }
@@ -441,31 +367,46 @@ public class PooledMODWTTransform extends MODWTTransform {
      * Performs direct circular convolution into a provided output buffer.
      */
     private void circularConvolveDirectInto(double[] signal, double[] filter, double[] output) {
-        int N = signal.length;
-        int M = filter.length;
-        
-        for (int n = 0; n < N; n++) {
-            double sum = 0.0;
-            for (int m = 0; m < M; m++) {
-                int signalIndex = Math.floorMod(n - m, N);
-                sum += signal[signalIndex] * filter[m];
-            }
-            output[n] = sum;
-        }
+        circularConvolveDirectIntoHelper(signal, filter, output, false);
     }
     
     /**
      * Performs direct circular convolution adjoint into a provided output buffer.
      */
     private void circularConvolveDirectAdjointInto(double[] signal, double[] filter, double[] output) {
+        circularConvolveDirectIntoHelper(signal, filter, output, true);
+    }
+    
+    /**
+     * Helper method for direct circular convolution into a provided buffer.
+     * 
+     * @param signal The input signal
+     * @param filter The filter coefficients
+     * @param output The output buffer to write results into
+     * @param adjoint If true, performs adjoint convolution
+     */
+    private void circularConvolveDirectIntoHelper(double[] signal, double[] filter, double[] output, boolean adjoint) {
         int N = signal.length;
         int M = filter.length;
         
-        Arrays.fill(output, 0, N, 0.0);
-        for (int n = 0; n < N; n++) {
-            for (int m = 0; m < M; m++) {
-                int outputIndex = Math.floorMod(n + m, N);
-                output[outputIndex] += signal[n] * filter[m];
+        if (adjoint) {
+            // For adjoint, we need to clear the output first as we're accumulating
+            Arrays.fill(output, 0, N, 0.0);
+            for (int n = 0; n < N; n++) {
+                for (int m = 0; m < M; m++) {
+                    int outputIndex = Math.floorMod(n + m, N);
+                    output[outputIndex] += signal[n] * filter[m];
+                }
+            }
+        } else {
+            // For forward convolution, we can write directly
+            for (int n = 0; n < N; n++) {
+                double sum = 0.0;
+                for (int m = 0; m < M; m++) {
+                    int signalIndex = Math.floorMod(n - m, N);
+                    sum += signal[signalIndex] * filter[m];
+                }
+                output[n] = sum;
             }
         }
     }
