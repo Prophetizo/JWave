@@ -107,8 +107,8 @@ public class DiscreteFourierTransform extends BasicTransform {
 
       } // k
 
-      arrFreq[ iR ] /= (double)n;
-      arrFreq[ iC ] /= (double)n;
+      // Standard normalization convention (Forward: 1, Inverse: 1/N)
+      // Don't normalize on forward transform
 
     } // i
 
@@ -164,6 +164,10 @@ public class DiscreteFourierTransform extends BasicTransform {
         arrTime[ iC ] += arrFreq[ kR ] * sin + arrFreq[ kC ] * cos;
 
       } // k
+
+      // Standard normalization convention (Forward: 1, Inverse: 1/N)
+      arrTime[ iR ] /= (double)n;
+      arrTime[ iC ] /= (double)n;
 
     } // i
 
@@ -235,8 +239,8 @@ public class DiscreteFourierTransform extends BasicTransform {
 
       } // k
 
-      arrFreq[ i ].mulReal( 1. / (double)n );
-      arrFreq[ i ].mulImag( 1. / (double)n );
+      // Standard normalization convention (Forward: 1, Inverse: 1/N)
+      // Don't normalize on forward transform
 
     } // i
 
@@ -279,6 +283,10 @@ public class DiscreteFourierTransform extends BasicTransform {
         arrTime[ i ].addImag( real * sin + imag * cos );
 
       } // k
+
+      // Standard normalization convention (Forward: 1, Inverse: 1/N)
+      arrTime[ i ].mulReal( 1. / (double)n );
+      arrTime[ i ].mulImag( 1. / (double)n );
 
     } // i
 

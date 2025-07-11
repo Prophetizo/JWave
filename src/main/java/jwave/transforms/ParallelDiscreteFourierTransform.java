@@ -157,6 +157,7 @@ public class ParallelDiscreteFourierTransform extends BasicTransform {
             }
         }
         
+        // Standard normalization convention (Forward: 1, Inverse: 1/N)
         for (int i = 0; i < n; i++) {
             arrTime[i] /= k;
         }
@@ -191,6 +192,7 @@ public class ParallelDiscreteFourierTransform extends BasicTransform {
                 Complex w = new Complex(Math.cos(arg), Math.sin(arg));
                 arrTime[k] = arrTime[k].add(arrFreq[t].mul(w));
             }
+            // Standard normalization convention (Forward: 1, Inverse: 1/N)
             arrTime[k] = arrTime[k].mul(1.0 / n);
         }
         
@@ -254,6 +256,7 @@ public class ParallelDiscreteFourierTransform extends BasicTransform {
                     }
                 }
                 
+                // Standard normalization convention (Forward: 1, Inverse: 1/N)
                 if (!isForward) {
                     output[i] /= k;
                     output[i + 1] /= k;
@@ -308,6 +311,7 @@ public class ParallelDiscreteFourierTransform extends BasicTransform {
                     output[k] = output[k].add(input[t].mul(w));
                 }
                 
+                // Standard normalization convention (Forward: 1, Inverse: 1/N)
                 if (!isForward) {
                     output[k] = output[k].mul(1.0 / n);
                 }
