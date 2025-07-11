@@ -1,7 +1,10 @@
 package jwave.transforms;
 
 import jwave.transforms.wavelets.haar.Haar1;
+import jwave.transforms.wavelets.daubechies.Daubechies2;
 import jwave.transforms.wavelets.daubechies.Daubechies4;
+import jwave.transforms.wavelets.daubechies.Daubechies8;
+import jwave.transforms.wavelets.daubechies.Daubechies16;
 import jwave.transforms.wavelets.daubechies.Daubechies20;
 import jwave.transforms.wavelets.symlets.Symlet8;
 import org.junit.Before;
@@ -93,10 +96,10 @@ public class MODWTFFTPerformanceTest {
         int[] filterLengths = {2, 4, 8, 16, 32, 40}; // Haar, Db2, Db4, Db8, Db16, Db20
         MODWTTransform[] transforms = {
             modwtHaar,
-            new MODWTTransform(new jwave.transforms.wavelets.daubechies.Daubechies2()),
+            new MODWTTransform(new Daubechies2()),
             modwtDb4,
-            new MODWTTransform(new jwave.transforms.wavelets.daubechies.Daubechies8()),
-            new MODWTTransform(new jwave.transforms.wavelets.daubechies.Daubechies16()),
+            new MODWTTransform(new Daubechies8()),
+            new MODWTTransform(new Daubechies16()),
             modwtDb20
         };
         
