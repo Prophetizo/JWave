@@ -76,15 +76,15 @@ public class PooledMODWTTransform extends MODWTTransform {
             return adjoint ? circularConvolveFFTAdjointPooled(signal, filter) 
                           : circularConvolveFFTPooled(signal, filter);
         } else {
-            return adjoint ? circularConvolveAdjointPooled(signal, filter) 
-                          : circularConvolvePooled(signal, filter);
+            return adjoint ? this.circularConvolveAdjointPooled(signal, filter) 
+                          : this.circularConvolvePooled(signal, filter);
         }
     }
     
     /**
      * Performs circular convolution using pooled arrays.
      */
-    private static double[] circularConvolvePooled(double[] signal, double[] filter) {
+    private double[] circularConvolvePooled(double[] signal, double[] filter) {
         int N = signal.length;
         int M = filter.length;
         
@@ -115,7 +115,7 @@ public class PooledMODWTTransform extends MODWTTransform {
     /**
      * Performs adjoint circular convolution using pooled arrays.
      */
-    private static double[] circularConvolveAdjointPooled(double[] signal, double[] filter) {
+    private double[] circularConvolveAdjointPooled(double[] signal, double[] filter) {
         int N = signal.length;
         int M = filter.length;
         
