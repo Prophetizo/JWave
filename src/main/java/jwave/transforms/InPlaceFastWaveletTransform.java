@@ -5,12 +5,19 @@ import jwave.exceptions.JWaveFailure;
 import jwave.transforms.wavelets.Wavelet;
 
 /**
- * In-place implementation of the Fast Wavelet Transform (FWT) that modifies
- * the input array directly instead of creating copies. This significantly
- * reduces memory usage and improves performance for large datasets.
+ * In-place API for the Fast Wavelet Transform (FWT) that modifies
+ * the input array directly. This provides an in-place interface while
+ * internally using the standard transform implementation.
  * 
  * <p>WARNING: This implementation modifies the input array. If you need to
  * preserve the original data, make a copy before calling these methods.</p>
+ * 
+ * <p><b>Current Implementation Note:</b></p>
+ * <p>This is currently a wrapper that uses the standard FWT internally and
+ * copies results back to the input array. While this doesn't reduce memory
+ * allocations yet, it provides the API for future true in-place implementations.
+ * A true in-place implementation would require modifying the base wavelet
+ * classes to support in-place operations at the algorithm level.</p>
  * 
  * <p><b>Usage Example:</b></p>
  * <pre>{@code
@@ -25,12 +32,12 @@ import jwave.transforms.wavelets.Wavelet;
  * fwt.forwardInPlace(workCopy);
  * }</pre>
  * 
- * <p><b>Performance Characteristics:</b></p>
+ * <p><b>Future Performance Goals:</b></p>
  * <ul>
- *   <li>Memory usage: O(n) workspace instead of O(2n) for copying</li>
+ *   <li>True in-place operations without intermediate allocations</li>
  *   <li>50-75% reduction in memory allocations</li>
  *   <li>20-30% faster due to reduced GC pressure</li>
- *   <li>Cache-friendly for large datasets</li>
+ *   <li>Better cache locality for large datasets</li>
  * </ul>
  * 
  * @author Stephen Romano
