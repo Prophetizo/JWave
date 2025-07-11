@@ -23,11 +23,11 @@ public class PooledWaveletPacketTransform extends WaveletPacketTransform {
     @Override
     public double[] forward(double[] arrTime, int level) throws JWaveException {
         if (!isBinary(arrTime.length))
-            throw new JWaveFailure("WaveletPacketTransform#forward - array length is not 2^p");
+            throw new JWaveFailure("PooledWaveletPacketTransform#forward - array length is not 2^p");
             
         int maxLevel = calcExponent(arrTime.length);
         if (level <= 0 || level > maxLevel)
-            throw new JWaveFailure("WaveletPacketTransform#forward - invalid level");
+            throw new JWaveFailure("PooledWaveletPacketTransform#forward - invalid level");
             
         int length = arrTime.length;
         ArrayBufferPool pool = ArrayBufferPool.getInstance();
@@ -35,97 +35,93 @@ public class PooledWaveletPacketTransform extends WaveletPacketTransform {
         // Allocate result array
         double[] arrHilb = Arrays.copyOf(arrTime, length);
         
-        // Pre-allocate the largest buffer we'll need for the loops
-        int maxH = length;
-        double[] iBufPool = pool.borrowDoubleArray(maxH);
+        int transformWavelength = _wavelet.getTransformWavelength();
+        int k = length;
+        int h = length;
+        int l = 0;
         
-        try {
-            int k = 0;
-            int h = length;
-            int steps = 1;
+        while (h >= transformWavelength && l < level) {
+            int g = k / h; // number of packets at this level
             
-            for (int l = 0; l < level; l++) {
-                h = h >> 1;
-                
-                for (int s = 0; s < steps; s++) {
-                    // Reuse the pooled buffer, just the portion we need
-                    double[] iBuf = iBufPool; // Use first h elements
-                    Arrays.fill(iBuf, 0, h, 0.0);
+            // Get buffer for this level's packet size
+            double[] iBuf = pool.borrowDoubleArray(h);
+            
+            try {
+                for (int p = 0; p < g; p++) {
+                    // Clear the buffer
+                    Arrays.fill(iBuf, 0.0);
                     
+                    int offset = p * h;
                     for (int i = 0; i < h; i++)
-                        iBuf[i] = arrHilb[k + i];
+                        iBuf[i] = arrHilb[offset + i];
                         
                     double[] oBuf = _wavelet.forward(iBuf, h);
                     
                     for (int i = 0; i < h; i++)
-                        arrHilb[k + i] = oBuf[i];
-                        
-                    k += h;
+                        arrHilb[offset + i] = oBuf[i];
                 }
-                
-                steps = steps << 1;
+            } finally {
+                pool.returnDoubleArray(iBuf);
             }
             
-            return arrHilb;
-            
-        } finally {
-            pool.returnDoubleArray(iBufPool);
+            h = h >> 1;
+            l++;
         }
+        
+        return arrHilb;
     }
     
     @Override
     public double[] reverse(double[] arrHilb, int level) throws JWaveException {
         if (!isBinary(arrHilb.length))
-            throw new JWaveFailure("WaveletPacketTransform#reverse - array length is not 2^p");
+            throw new JWaveFailure("PooledWaveletPacketTransform#reverse - array length is not 2^p");
             
         int maxLevel = calcExponent(arrHilb.length);
         if (level < 0 || level > maxLevel)
-            throw new JWaveFailure("WaveletPacketTransform#reverse - invalid level");
+            throw new JWaveFailure("PooledWaveletPacketTransform#reverse - invalid level");
             
         int length = arrHilb.length;
         ArrayBufferPool pool = ArrayBufferPool.getInstance();
         
         double[] arrTime = Arrays.copyOf(arrHilb, length);
         
-        // Pre-allocate the largest buffer we'll need
-        int maxH = length >> (level - 1);
-        double[] iBufPool = pool.borrowDoubleArray(maxH);
+        int transformWavelength = _wavelet.getTransformWavelength();
+        int k = arrTime.length;
+        int h = transformWavelength;
         
-        try {
-            int steps = calcExponent(length) - level;
-            steps = (int)(Math.pow(2.0, (double)steps));
+        int steps = calcExponent(length);
+        for (int l = level; l < steps; l++)
+            h = h << 1; // begin reverse transform at certain level
+        
+        // No pre-allocation of buffer here, will allocate as needed
+        
+        while (h <= arrTime.length && h >= transformWavelength) {
+            int g = k / h; // number of packets at this level
             
-            int h = length;
-            for (int l = 0; l < level; l++)
-                h = h >> 1;
-                
-            int k = 0;
+            // Get buffer for this level's packet size
+            double[] iBuf = pool.borrowDoubleArray(h);
             
-            for (int l = level; l > 0; l--) {
-                for (int s = 0; s < steps; s++) {
-                    // Reuse the pooled buffer
-                    double[] iBuf = iBufPool;
-                    Arrays.fill(iBuf, 0, h, 0.0);
+            try {
+                for (int p = 0; p < g; p++) {
+                    // Clear the buffer
+                    Arrays.fill(iBuf, 0.0);
                     
+                    int offset = p * h;
                     for (int i = 0; i < h; i++)
-                        iBuf[i] = arrTime[k + i];
+                        iBuf[i] = arrTime[offset + i];
                         
                     double[] oBuf = _wavelet.reverse(iBuf, h);
                     
                     for (int i = 0; i < h; i++)
-                        arrTime[k + i] = oBuf[i];
-                        
-                    k += h;
+                        arrTime[offset + i] = oBuf[i];
                 }
-                
-                h = h << 1;
-                steps = steps >> 1;
+            } finally {
+                pool.returnDoubleArray(iBuf);
             }
             
-            return arrTime;
-            
-        } finally {
-            pool.returnDoubleArray(iBufPool);
+            h = h << 1;
         }
+        
+        return arrTime;
     }
 }
