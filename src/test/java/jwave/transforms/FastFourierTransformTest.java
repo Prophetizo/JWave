@@ -122,8 +122,8 @@ public class FastFourierTransformTest {
         
         Complex[] result = fft.forward(constant);
         
-        // DC component should be 1 (4/4 due to normalization), all others should be 0
-        assertEquals("DC component", 1.0, result[0].getReal(), DELTA);
+        // DC component should be 4 (sum of all values, no normalization on forward), all others should be 0
+        assertEquals("DC component", 4.0, result[0].getReal(), DELTA);
         assertEquals("DC component imag", 0.0, result[0].getImag(), DELTA);
         
         for (int i = 1; i < 4; i++) {
@@ -138,9 +138,9 @@ public class FastFourierTransformTest {
         
         result = fft.forward(singleFreq);
         
-        // Should have peaks at frequencies 1 and 7 (normalized by n=8)
-        assertTrue("Peak at frequency 1", result[1].getMag() > 0.48);
-        assertTrue("Peak at frequency 7", result[7].getMag() > 0.48);
+        // Should have peaks at frequencies 1 and 7 (no normalization on forward)
+        assertTrue("Peak at frequency 1", result[1].getMag() > 3.9);
+        assertTrue("Peak at frequency 7", result[7].getMag() > 3.9);
         
         // Other frequencies should be near zero
         for (int i = 2; i < 7; i++) {
@@ -181,9 +181,9 @@ public class FastFourierTransformTest {
             }
             
             // Parseval's theorem: energy should be conserved
-            // With JWave normalization: ||X||² = ||x||²/n
+            // With standard normalization: ||X||² = n * ||x||²
             assertEquals("Energy conservation for size " + n,
-                       timeEnergy, freqEnergy * n, DELTA * n);
+                       timeEnergy * n, freqEnergy, DELTA * n);
         }
     }
 

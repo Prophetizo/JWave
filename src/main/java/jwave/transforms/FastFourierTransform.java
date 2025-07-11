@@ -202,9 +202,9 @@ public class FastFourierTransform extends BasicTransform {
             }
         }
         
-        // Normalize: forward transform by 1/n (to match JWave DFT convention)
-        // inverse transform by 1 (no normalization)
-        if (!inverse) {
+        // Normalize: Standard convention (Forward: 1, Inverse: 1/N)
+        // This matches MATLAB, NumPy, SciPy, and most other implementations
+        if (inverse) {
             for (int i = 0; i < n; i++) {
                 x[i] = x[i].mul(1.0 / n);
             }
@@ -314,8 +314,8 @@ public class FastFourierTransform extends BasicTransform {
         Complex[] result = new Complex[n];
         for (int i = 0; i < n; i++) {
             result[i] = a[i].mul(chirp[i]);
-            // Normalize forward transform to match JWave DFT convention
-            if (!inverse) {
+            // Apply standard normalization convention
+            if (inverse) {
                 result[i] = result[i].mul(1.0 / n);
             }
         }
