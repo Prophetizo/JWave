@@ -152,7 +152,8 @@ public class ArrayBufferPool {
         // Reset all Complex values to zero
         for (int i = 0; i < array.length; i++) {
             if (array[i] != null) {
-                array[i] = new Complex(0, 0);
+                array[i].setReal(0);
+                array[i].setImag(0);
             }
         }
         
