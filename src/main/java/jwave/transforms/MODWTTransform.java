@@ -694,6 +694,11 @@ public class MODWTTransform extends WaveletTransform {
         double[] paddedFilter = new double[N];
         
         // Copy filter coefficients with circular wrapping
+        // Using addition (+=) instead of assignment (=) ensures that overlapping
+        // coefficients are accumulated correctly when the filter length exceeds
+        // the signal length. This is necessary for circular convolution, where
+        // filter coefficients wrap around and contribute to multiple positions
+        // in the padded filter array.
         for (int i = 0; i < M; i++) {
             paddedFilter[i % N] += filter[i];
         }
