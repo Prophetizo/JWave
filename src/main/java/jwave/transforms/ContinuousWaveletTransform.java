@@ -454,10 +454,8 @@ public class ContinuousWaveletTransform extends BasicTransform {
     double[] timeAxis = createTimeAxis(signalLength, samplingRate);
     Complex[][] coefficients = initializeCoefficients(nScales, signalLength);
     
-    // Determine parallelism threshold
-    int parallelThreshold = getParallelThreshold(nScales, signalLength);
-    
-    if (nScales < parallelThreshold) {
+    // Check if we should use parallel processing
+    if (!shouldUseParallel(nScales, signalLength)) {
       // Fall back to sequential for small scale counts
       return transform(signal, scales, samplingRate);
     }
@@ -502,10 +500,8 @@ public class ContinuousWaveletTransform extends BasicTransform {
     double[] timeAxis = createTimeAxis(signalLength, samplingRate);
     Complex[][] coefficients = initializeCoefficients(nScales, signalLength);
     
-    // Determine parallelism threshold
-    int parallelThreshold = getParallelThreshold(nScales, signalLength);
-    
-    if (nScales < parallelThreshold) {
+    // Check if we should use parallel processing
+    if (!shouldUseParallel(nScales, signalLength)) {
       // Fall back to sequential for small scale counts
       return transformFFT(signal, scales, samplingRate);
     }
@@ -596,10 +592,22 @@ public class ContinuousWaveletTransform extends BasicTransform {
   }
 
   /**
+   * Check if parallel processing should be used based on problem size.
+   * 
+   * @param nScales number of scales
+   * @param signalLength length of signal
+   * @return true if parallel processing should be used
+   */
+  private boolean shouldUseParallel(int nScales, int signalLength) {
+    int threshold = getParallelThreshold(nScales, signalLength);
+    return nScales >= threshold;
+  }
+
+  /**
    * Recursive action for parallel CWT computation using Fork/Join framework.
    * This provides more control over task granularity.
    */
-  private static class CWTTask extends RecursiveAction {
+  private class CWTTask extends RecursiveAction {
     private final double[] signal;
     private final double[] scales;
     private final Complex[][] coefficients;
