@@ -78,7 +78,7 @@ public class ParallelWaveletPacketTransform extends PooledWaveletPacketTransform
     @Override
     public double[] forward(double[] arrTime, int level) throws JWaveException {
         if (!isBinary(arrTime.length))
-            throw new JWaveFailure("ParallelWaveletPacketTransform#forward - array length is not 2^p");
+            throw new JWaveFailure("ParallelWaveletPacketTransform#forward - array length is not 2^p: got " + arrTime.length);
             
         int maxLevel = calcExponent(arrTime.length);
         if (level < 0 || level > maxLevel)
