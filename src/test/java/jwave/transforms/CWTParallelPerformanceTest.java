@@ -58,6 +58,8 @@ public class CWTParallelPerformanceTest {
   private static final long RANDOM_SEED = 42L; // Fixed seed for reproducibility
   
   // Check if we should skip performance tests (useful for CI)
+  // To skip performance tests in CI, use: mvn test -Djwave.test.skipPerformance=true
+  // Alternative: Change default to "true" to skip by default and run with -Djwave.test.skipPerformance=false
   private static final boolean SKIP_PERFORMANCE_TESTS = 
       Boolean.parseBoolean(System.getProperty("jwave.test.skipPerformance", "false"));
   
