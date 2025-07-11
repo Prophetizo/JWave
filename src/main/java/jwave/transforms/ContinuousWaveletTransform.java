@@ -26,7 +26,6 @@ import jwave.exceptions.JWaveException;
 import jwave.transforms.wavelets.continuous.ContinuousWavelet;
 import jwave.utils.MathUtils;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
 import java.util.stream.IntStream;
 
