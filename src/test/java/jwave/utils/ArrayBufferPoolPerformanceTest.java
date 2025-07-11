@@ -3,7 +3,6 @@ package jwave.utils;
 import jwave.datatypes.natives.Complex;
 import org.junit.Test;
 import org.junit.After;
-import static org.junit.Assume.assumeFalse;
 
 /**
  * Performance test comparing optimized non-concurrent collections vs original concurrent ones.
@@ -14,9 +13,6 @@ import static org.junit.Assume.assumeFalse;
  */
 public class ArrayBufferPoolPerformanceTest {
     
-    private static final boolean SKIP_PERFORMANCE_TESTS = 
-        Boolean.parseBoolean(System.getProperty("jwave.test.skipPerformance", "false"));
-    
     @After
     public void tearDown() {
         ArrayBufferPool.remove();
@@ -24,7 +20,7 @@ public class ArrayBufferPoolPerformanceTest {
     
     @Test
     public void testPoolPerformance() {
-        assumeFalse("Skipping performance test", SKIP_PERFORMANCE_TESTS);
+        TestUtils.skipIfPerformanceTestsDisabled();
         
         ArrayBufferPool pool = ArrayBufferPool.getInstance();
         
@@ -69,7 +65,7 @@ public class ArrayBufferPoolPerformanceTest {
     
     @Test
     public void testComplexArrayPoolPerformance() {
-        assumeFalse("Skipping performance test", SKIP_PERFORMANCE_TESTS);
+        TestUtils.skipIfPerformanceTestsDisabled();
         
         ArrayBufferPool pool = ArrayBufferPool.getInstance();
         int iterations = 50000;

@@ -3,9 +3,9 @@ package jwave.transforms;
 import jwave.transforms.wavelets.daubechies.Daubechies4;
 import jwave.transforms.wavelets.daubechies.Daubechies20;
 import jwave.utils.ArrayBufferPool;
+import jwave.utils.TestUtils;
 import org.junit.Test;
 import org.junit.Before;
-import static org.junit.Assume.assumeFalse;
 
 import java.util.Random;
 
@@ -17,10 +17,6 @@ import java.util.Random;
  * @author Stephen Romano
  */
 public class MODWTBufferPoolingPerformanceTest {
-    
-    // Skip performance tests if system property is set
-    private static final boolean SKIP_PERFORMANCE_TESTS = 
-        Boolean.parseBoolean(System.getProperty("jwave.test.skipPerformance", "false"));
     
     private static final int WARMUP_ITERATIONS = 100;
     private static final int TEST_ITERATIONS = 1000;
@@ -45,17 +41,9 @@ public class MODWTBufferPoolingPerformanceTest {
         pooledModwt = new PooledMODWTTransform(new Daubechies4());
     }
     
-    /**
-     * Helper method to skip performance tests when requested.
-     * Call this at the beginning of performance test methods.
-     */
-    private void skipIfPerformanceTestsDisabled() {
-        assumeFalse("Skipping performance test", SKIP_PERFORMANCE_TESTS);
-    }
-    
     @Test
     public void testGCPressureComparison() {
-        skipIfPerformanceTestsDisabled();
+        TestUtils.skipIfPerformanceTestsDisabled();
         
         System.out.println("\n=== MODWT Buffer Pooling Performance Test ===");
         System.out.println("Signal size: " + SIGNAL_SIZE);
@@ -82,7 +70,7 @@ public class MODWTBufferPoolingPerformanceTest {
     
     @Test
     public void testFFTConvolutionPooling() {
-        skipIfPerformanceTestsDisabled();
+        TestUtils.skipIfPerformanceTestsDisabled();
         
         System.out.println("\n=== FFT Convolution Pooling Test ===");
         

@@ -30,6 +30,7 @@ import jwave.datatypes.natives.Complex;
 import jwave.transforms.wavelets.continuous.MorletWavelet;
 import jwave.transforms.wavelets.continuous.MexicanHatWavelet;
 import jwave.transforms.CWTResult;
+import jwave.utils.TestUtils;
 import java.util.Random;
 
 /**
@@ -56,12 +57,6 @@ public class CWTParallelPerformanceTest {
   private static final int WARMUP_RUNS = 3;
   private static final int BENCHMARK_RUNS = 5;
   private static final long RANDOM_SEED = 42L; // Fixed seed for reproducibility
-  
-  // Check if we should skip performance tests (useful for CI)
-  // To skip performance tests in CI, use: mvn test -Djwave.test.skipPerformance=true
-  // Alternative: Change default to "true" to skip by default and run with -Djwave.test.skipPerformance=false
-  private static final boolean SKIP_PERFORMANCE_TESTS = 
-      Boolean.parseBoolean(System.getProperty("jwave.test.skipPerformance", "false"));
   
   // Test signal parameters
   private double[] testSignal;
@@ -191,10 +186,7 @@ public class CWTParallelPerformanceTest {
    */
   @Test
   public void benchmarkParallelDirectTransform() {
-    if (SKIP_PERFORMANCE_TESTS) {
-      System.out.println("Skipping performance test (jwave.test.skipPerformance=true)");
-      return;
-    }
+    TestUtils.skipIfPerformanceTestsDisabled();
     ContinuousWaveletTransform cwt = new ContinuousWaveletTransform(morletWavelet);
     
     // Warmup
@@ -261,10 +253,7 @@ public class CWTParallelPerformanceTest {
    */
   @Test
   public void benchmarkParallelFFTTransform() {
-    if (SKIP_PERFORMANCE_TESTS) {
-      System.out.println("Skipping performance test (jwave.test.skipPerformance=true)");
-      return;
-    }
+    TestUtils.skipIfPerformanceTestsDisabled();
     ContinuousWaveletTransform cwt = new ContinuousWaveletTransform(morletWavelet);
     
     // Warmup
@@ -331,10 +320,7 @@ public class CWTParallelPerformanceTest {
    */
   @Test
   public void testScalability() {
-    if (SKIP_PERFORMANCE_TESTS) {
-      System.out.println("Skipping performance test (jwave.test.skipPerformance=true)");
-      return;
-    }
+    TestUtils.skipIfPerformanceTestsDisabled();
     ContinuousWaveletTransform cwt = new ContinuousWaveletTransform(mexicanHatWavelet);
     
     int[] scaleNumbers = {10, 25, 50, 100};
@@ -414,10 +400,7 @@ public class CWTParallelPerformanceTest {
    */
   @Test
   public void testDifferentWavelets() {
-    if (SKIP_PERFORMANCE_TESTS) {
-      System.out.println("Skipping performance test (jwave.test.skipPerformance=true)");
-      return;
-    }
+    TestUtils.skipIfPerformanceTestsDisabled();
     System.out.println("\n=== Performance with Different Wavelets ===");
     
     // Test with Morlet
