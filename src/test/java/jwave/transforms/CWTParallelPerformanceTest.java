@@ -29,6 +29,7 @@ import org.junit.After;
 import jwave.datatypes.natives.Complex;
 import jwave.transforms.wavelets.continuous.MorletWavelet;
 import jwave.transforms.wavelets.continuous.MexicanHatWavelet;
+import java.util.Random;
 
 /**
  * Performance and correctness tests for parallel CWT implementation.
@@ -46,6 +47,7 @@ public class CWTParallelPerformanceTest {
   private static final double DELTA = 1e-10;
   private static final int WARMUP_RUNS = 3;
   private static final int BENCHMARK_RUNS = 5;
+  private static final long RANDOM_SEED = 42L; // Fixed seed for reproducibility
   
   // Check if we should skip performance tests (useful for CI)
   private static final boolean SKIP_PERFORMANCE_TESTS = 
@@ -64,13 +66,16 @@ public class CWTParallelPerformanceTest {
     int signalLength = 4096; // Reasonable size for performance testing
     testSignal = new double[signalLength];
     
+    // Use seeded random for reproducible noise
+    Random random = new Random(RANDOM_SEED);
+    
     // Mix of frequencies: 50 Hz, 120 Hz, 250 Hz with varying amplitudes
     for (int i = 0; i < signalLength; i++) {
       double t = i / samplingRate;
       testSignal[i] = 1.0 * Math.sin(2 * Math.PI * 50 * t) +
                       0.5 * Math.sin(2 * Math.PI * 120 * t) +
                       0.3 * Math.sin(2 * Math.PI * 250 * t) +
-                      0.1 * Math.random(); // Add some noise
+                      0.1 * random.nextGaussian(); // Add reproducible Gaussian noise
     }
     
     // Generate scales for frequency range 10-500 Hz
