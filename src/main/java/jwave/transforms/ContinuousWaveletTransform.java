@@ -562,17 +562,9 @@ public class ContinuousWaveletTransform extends BasicTransform {
         ForkJoinPool.commonPool();
     
     try {
-      // Submit parallel task
-      pool.submit(() -> {
-        IntStream.range(0, nScales).parallel().forEach(scaleIdx -> {
-          double scale = scales[scaleIdx];
-          
-          // For each time point in the signal
-          for (int timeIdx = 0; timeIdx < signalLength; timeIdx++) {
-            coefficients[scaleIdx][timeIdx] = computeCoefficient(signal, timeIdx, scale, samplingRate);
-          }
-        });
-      }).join();
+      // Use CWTTask with the custom pool for proper parallelism control
+      CWTTask mainTask = new CWTTask(signal, scales, coefficients, samplingRate, 0, nScales);
+      pool.invoke(mainTask);
     } finally {
       if (parallelism > 0) {
         pool.shutdown();
