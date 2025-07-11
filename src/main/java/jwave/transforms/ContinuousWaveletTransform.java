@@ -133,15 +133,9 @@ public class ContinuousWaveletTransform extends BasicTransform {
     int signalLength = signal.length;
     int nScales = scales.length;
     
-    // Create time axis
-    double[] timeAxis = new double[signalLength];
-    double dt = 1.0 / samplingRate;
-    for (int i = 0; i < signalLength; i++) {
-      timeAxis[i] = i * dt;
-    }
-    
-    // Initialize coefficient matrix
-    Complex[][] coefficients = new Complex[nScales][signalLength];
+    // Create time axis and initialize coefficient matrix
+    double[] timeAxis = createTimeAxis(signalLength, samplingRate);
+    Complex[][] coefficients = initializeCoefficients(nScales, signalLength);
     
     // Perform CWT for each scale
     for (int scaleIdx = 0; scaleIdx < nScales; scaleIdx++) {
@@ -177,23 +171,11 @@ public class ContinuousWaveletTransform extends BasicTransform {
     Complex[] signalFFT = computeFFT(paddedSignal);
     
     // Create frequency axis
-    double[] omega = new double[paddedLength];
-    for (int i = 0; i < paddedLength; i++) {
-      omega[i] = 2.0 * Math.PI * i * samplingRate / paddedLength;
-      if (i > paddedLength / 2) {
-        omega[i] -= 2.0 * Math.PI * samplingRate;
-      }
-    }
+    double[] omega = createFrequencyAxis(paddedLength, samplingRate);
     
-    // Create time axis
-    double[] timeAxis = new double[signalLength];
-    double dt = 1.0 / samplingRate;
-    for (int i = 0; i < signalLength; i++) {
-      timeAxis[i] = i * dt;
-    }
-    
-    // Initialize coefficient matrix
-    Complex[][] coefficients = new Complex[nScales][signalLength];
+    // Create time axis and initialize coefficient matrix
+    double[] timeAxis = createTimeAxis(signalLength, samplingRate);
+    Complex[][] coefficients = initializeCoefficients(nScales, signalLength);
     
     // Perform CWT for each scale using FFT
     for (int scaleIdx = 0; scaleIdx < nScales; scaleIdx++) {
@@ -411,6 +393,51 @@ public class ContinuousWaveletTransform extends BasicTransform {
   }
 
   /**
+   * Create time axis array for the given signal length and sampling rate.
+   * 
+   * @param signalLength length of the signal
+   * @param samplingRate sampling rate in Hz
+   * @return time axis array
+   */
+  private double[] createTimeAxis(int signalLength, double samplingRate) {
+    double[] timeAxis = new double[signalLength];
+    double dt = 1.0 / samplingRate;
+    for (int i = 0; i < signalLength; i++) {
+      timeAxis[i] = i * dt;
+    }
+    return timeAxis;
+  }
+
+  /**
+   * Initialize coefficient matrix for CWT results.
+   * 
+   * @param nScales number of scales
+   * @param signalLength length of the signal
+   * @return initialized coefficient matrix
+   */
+  private Complex[][] initializeCoefficients(int nScales, int signalLength) {
+    return new Complex[nScales][signalLength];
+  }
+
+  /**
+   * Create frequency axis array for FFT-based methods.
+   * 
+   * @param paddedLength padded length for FFT
+   * @param samplingRate sampling rate in Hz
+   * @return frequency axis array (omega)
+   */
+  private double[] createFrequencyAxis(int paddedLength, double samplingRate) {
+    double[] omega = new double[paddedLength];
+    for (int i = 0; i < paddedLength; i++) {
+      omega[i] = 2.0 * Math.PI * i * samplingRate / paddedLength;
+      if (i > paddedLength / 2) {
+        omega[i] -= 2.0 * Math.PI * samplingRate;
+      }
+    }
+    return omega;
+  }
+
+  /**
    * Perform parallel continuous wavelet transform on a signal.
    * This method parallelizes across scales for improved performance.
    * 
@@ -423,15 +450,9 @@ public class ContinuousWaveletTransform extends BasicTransform {
     int signalLength = signal.length;
     int nScales = scales.length;
     
-    // Create time axis
-    double[] timeAxis = new double[signalLength];
-    double dt = 1.0 / samplingRate;
-    for (int i = 0; i < signalLength; i++) {
-      timeAxis[i] = i * dt;
-    }
-    
-    // Initialize coefficient matrix
-    Complex[][] coefficients = new Complex[nScales][signalLength];
+    // Create time axis and initialize coefficient matrix
+    double[] timeAxis = createTimeAxis(signalLength, samplingRate);
+    Complex[][] coefficients = initializeCoefficients(nScales, signalLength);
     
     // Determine parallelism threshold
     int parallelThreshold = getParallelThreshold(nScales, signalLength);
@@ -475,23 +496,11 @@ public class ContinuousWaveletTransform extends BasicTransform {
     Complex[] signalFFT = computeFFT(paddedSignal);
     
     // Create frequency axis
-    double[] omega = new double[paddedLength];
-    for (int i = 0; i < paddedLength; i++) {
-      omega[i] = 2.0 * Math.PI * i * samplingRate / paddedLength;
-      if (i > paddedLength / 2) {
-        omega[i] -= 2.0 * Math.PI * samplingRate;
-      }
-    }
+    double[] omega = createFrequencyAxis(paddedLength, samplingRate);
     
-    // Create time axis
-    double[] timeAxis = new double[signalLength];
-    double dt = 1.0 / samplingRate;
-    for (int i = 0; i < signalLength; i++) {
-      timeAxis[i] = i * dt;
-    }
-    
-    // Initialize coefficient matrix
-    Complex[][] coefficients = new Complex[nScales][signalLength];
+    // Create time axis and initialize coefficient matrix
+    double[] timeAxis = createTimeAxis(signalLength, samplingRate);
+    Complex[][] coefficients = initializeCoefficients(nScales, signalLength);
     
     // Determine parallelism threshold
     int parallelThreshold = getParallelThreshold(nScales, signalLength);
@@ -545,15 +554,9 @@ public class ContinuousWaveletTransform extends BasicTransform {
     int signalLength = signal.length;
     int nScales = scales.length;
     
-    // Create time axis
-    double[] timeAxis = new double[signalLength];
-    double dt = 1.0 / samplingRate;
-    for (int i = 0; i < signalLength; i++) {
-      timeAxis[i] = i * dt;
-    }
-    
-    // Initialize coefficient matrix
-    Complex[][] coefficients = new Complex[nScales][signalLength];
+    // Create time axis and initialize coefficient matrix
+    double[] timeAxis = createTimeAxis(signalLength, samplingRate);
+    Complex[][] coefficients = initializeCoefficients(nScales, signalLength);
     
     // Create custom ForkJoinPool if parallelism specified
     ForkJoinPool pool = parallelism > 0 ? 
