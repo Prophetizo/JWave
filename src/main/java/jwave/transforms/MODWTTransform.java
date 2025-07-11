@@ -677,6 +677,31 @@ public class MODWTTransform extends WaveletTransform {
     }
     
     /**
+     * Wraps a filter to the signal length with circular indexing.
+     * 
+     * <p>When the filter is longer than the signal (common with upsampled filters),
+     * this method wraps the filter coefficients by accumulating values that map
+     * to the same position after modulo operation.</p>
+     * 
+     * @param filter The filter to wrap
+     * @param signalLength The target length for the wrapped filter
+     * @return The wrapped filter with length equal to signalLength
+     */
+    private static double[] wrapFilterToSignalLength(double[] filter, int signalLength) {
+        double[] wrappedFilter = new double[signalLength];
+        
+        // Using addition (+=) instead of assignment (=) ensures that overlapping
+        // coefficients are accumulated correctly when the filter length exceeds
+        // the signal length. This is necessary for circular convolution, where
+        // filter coefficients wrap around and contribute to multiple positions.
+        for (int i = 0; i < filter.length; i++) {
+            wrappedFilter[i % signalLength] += filter[i];
+        }
+        
+        return wrappedFilter;
+    }
+    
+    /**
      * Performs circular convolution using FFT for improved performance.
      * 
      * <p>Circular convolution theorem: circular_conv(x,h) = IFFT(FFT(x) * FFT(h))</p>
@@ -687,21 +712,9 @@ public class MODWTTransform extends WaveletTransform {
      */
     private double[] circularConvolveFFT(double[] signal, double[] filter) {
         int N = signal.length;
-        int M = filter.length;
         
-        // When filter is longer than signal (common with upsampled filters),
-        // we need to wrap the filter coefficients
-        double[] paddedFilter = new double[N];
-        
-        // Copy filter coefficients with circular wrapping
-        // Using addition (+=) instead of assignment (=) ensures that overlapping
-        // coefficients are accumulated correctly when the filter length exceeds
-        // the signal length. This is necessary for circular convolution, where
-        // filter coefficients wrap around and contribute to multiple positions
-        // in the padded filter array.
-        for (int i = 0; i < M; i++) {
-            paddedFilter[i % N] += filter[i];
-        }
+        // Wrap filter to signal length if necessary
+        double[] paddedFilter = wrapFilterToSignalLength(filter, N);
         
         // Convert to complex arrays
         Complex[] signalComplex = new Complex[N];
@@ -745,16 +758,9 @@ public class MODWTTransform extends WaveletTransform {
      */
     private double[] circularConvolveFFTAdjoint(double[] signal, double[] filter) {
         int N = signal.length;
-        int M = filter.length;
         
-        // For the adjoint operation, we need to implement the transpose of the
-        // circular convolution matrix. 
-        double[] paddedFilter = new double[N];
-        
-        // Copy filter coefficients with circular wrapping
-        for (int i = 0; i < M; i++) {
-            paddedFilter[i % N] += filter[i];
-        }
+        // Wrap filter to signal length if necessary
+        double[] paddedFilter = wrapFilterToSignalLength(filter, N);
         
         // Convert to complex arrays
         Complex[] signalComplex = new Complex[N];
@@ -780,10 +786,11 @@ public class MODWTTransform extends WaveletTransform {
         // Inverse FFT
         Complex[] result = fft.reverse(productFFT);
         
-        // Extract real part and apply circular shift to get adjoint result
+        // Extract real part 
         double[] output = new double[N];
         for (int i = 0; i < N; i++) {
-            // The adjoint requires a circular shift due to the indexing difference
+            // The conjugation of the filter FFT already implements the adjoint operation correctly
+            // No additional circular shift is needed
             output[i] = result[i].getReal();
         }
         
