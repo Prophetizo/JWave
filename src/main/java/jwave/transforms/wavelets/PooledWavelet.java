@@ -41,6 +41,9 @@ public class PooledWavelet extends Wavelet {
     
     @Override
     public double[] forward(double[] arrTime, int arrTimeLength) {
+        if (arrTimeLength > arrTime.length) {
+            throw new IllegalArgumentException("arrTimeLength cannot exceed arrTime.length");
+        }
         ArrayBufferPool pool = ArrayBufferPool.getInstance();
         double[] arrHilb = pool.borrowDoubleArray(arrTimeLength);
         
