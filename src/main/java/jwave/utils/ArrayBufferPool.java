@@ -166,11 +166,19 @@ public class ArrayBufferPool {
     /**
      * Borrows a 2D double array with the specified dimensions.
      * 
-     * @param rows The number of rows
-     * @param cols The number of columns
+     * @param rows The number of rows (must be positive)
+     * @param cols The number of columns (must be positive)
      * @return A 2D double array
+     * @throws IllegalArgumentException if rows or cols is not positive
      */
     public double[][] borrow2DDoubleArray(int rows, int cols) {
+        if (rows <= 0) {
+            throw new IllegalArgumentException("Number of rows must be positive, got: " + rows);
+        }
+        if (cols <= 0) {
+            throw new IllegalArgumentException("Number of columns must be positive, got: " + cols);
+        }
+        
         double[][] array = new double[rows][];
         for (int i = 0; i < rows; i++) {
             array[i] = borrowDoubleArray(cols);

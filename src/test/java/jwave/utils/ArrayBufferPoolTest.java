@@ -134,6 +134,30 @@ public class ArrayBufferPoolTest {
         pool.borrowComplexArray(-1);
     }
     
+    @Test(expected = IllegalArgumentException.class)
+    public void test2DArrayNegativeRows() {
+        ArrayBufferPool pool = ArrayBufferPool.getInstance();
+        pool.borrow2DDoubleArray(-1, 10);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void test2DArrayNegativeCols() {
+        ArrayBufferPool pool = ArrayBufferPool.getInstance();
+        pool.borrow2DDoubleArray(10, -1);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void test2DArrayZeroRows() {
+        ArrayBufferPool pool = ArrayBufferPool.getInstance();
+        pool.borrow2DDoubleArray(0, 10);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void test2DArrayZeroCols() {
+        ArrayBufferPool pool = ArrayBufferPool.getInstance();
+        pool.borrow2DDoubleArray(10, 0);
+    }
+    
     @Test
     public void testThreadLocalIsolation() throws InterruptedException {
         final boolean[] thread1Success = {false};
