@@ -150,6 +150,14 @@ public class CWTParallelPerformanceTest {
     // Run parallel FFT transform (will be implemented)
     CWTResult parallelResult = cwtParallel.transformFFTParallel(testSignal, scales, samplingRate);
     
+    // Verify dimensions match
+    assertEquals("Number of scales should match", 
+                 sequentialResult.getNumberOfScales(), 
+                 parallelResult.getNumberOfScales());
+    assertEquals("Number of time points should match", 
+                 sequentialResult.getNumberOfTimePoints(), 
+                 parallelResult.getNumberOfTimePoints());
+    
     // Verify coefficients are identical
     Complex[][] seqCoeffs = sequentialResult.getCoefficients();
     Complex[][] parCoeffs = parallelResult.getCoefficients();
