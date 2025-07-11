@@ -36,12 +36,11 @@ public class PooledWaveletPacketTransform extends WaveletPacketTransform {
         double[] arrHilb = Arrays.copyOf(arrTime, length);
         
         int transformWavelength = _wavelet.getTransformWavelength();
-        int k = length;
         int h = length;
         int l = 0;
         
         while (h >= transformWavelength && l < level) {
-            int g = k / h; // number of packets at this level
+            int g = length / h; // number of packets at this level
             
             // Get buffer for this level's packet size
             double[] iBuf = pool.borrowDoubleArray(h);
@@ -86,7 +85,6 @@ public class PooledWaveletPacketTransform extends WaveletPacketTransform {
         double[] arrTime = Arrays.copyOf(arrHilb, length);
         
         int transformWavelength = _wavelet.getTransformWavelength();
-        int k = arrTime.length;
         int h = transformWavelength;
         
         int steps = calcExponent(length);
@@ -96,7 +94,7 @@ public class PooledWaveletPacketTransform extends WaveletPacketTransform {
         // No pre-allocation of buffer here, will allocate as needed
         
         while (h <= arrTime.length && h >= transformWavelength) {
-            int g = k / h; // number of packets at this level
+            int g = length / h; // number of packets at this level
             
             // Get buffer for this level's packet size
             double[] iBuf = pool.borrowDoubleArray(h);
