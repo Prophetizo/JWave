@@ -174,7 +174,7 @@ public class CWTParallelPerformanceTest {
   @Test
   public void benchmarkParallelDirectTransform() {
     if (SKIP_PERFORMANCE_TESTS) {
-      logger.info("Skipping performance test (jwave.test.skipPerformance=true)");
+      System.out.println("Skipping performance test (jwave.test.skipPerformance=true)");
       return;
     }
     ContinuousWaveletTransform cwt = new ContinuousWaveletTransform(morletWavelet);
