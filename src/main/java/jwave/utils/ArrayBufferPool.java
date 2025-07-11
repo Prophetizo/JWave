@@ -130,9 +130,7 @@ public class ArrayBufferPool {
         if (array == null) {
             array = new Complex[bucketSize];
             // Pre-initialize Complex objects to avoid allocation during use
-            for (int i = 0; i < array.length; i++) {
-                array[i] = new Complex(0, 0);
-            }
+            initializeComplexArray(array);
         }
         
         return array;
@@ -160,6 +158,48 @@ public class ArrayBufferPool {
         Queue<Complex[]> bucket = complexArrayPool.get(array.length);
         if (bucket != null && bucket.size() < MAX_ARRAYS_PER_BUCKET) {
             bucket.offer(array);
+        }
+    }
+    
+    /**
+     * Borrows a 2D double array with the specified dimensions.
+     * 
+     * @param rows The number of rows
+     * @param cols The number of columns
+     * @return A 2D double array
+     */
+    public double[][] borrow2DDoubleArray(int rows, int cols) {
+        double[][] array = new double[rows][];
+        for (int i = 0; i < rows; i++) {
+            array[i] = borrowDoubleArray(cols);
+        }
+        return array;
+    }
+    
+    /**
+     * Returns a 2D double array to the pool.
+     * 
+     * @param array The 2D array to return
+     */
+    public void return2DDoubleArray(double[][] array) {
+        if (array != null) {
+            for (double[] row : array) {
+                returnDoubleArray(row);
+            }
+        }
+    }
+    
+    /**
+     * Pre-initializes Complex array elements to avoid allocation during use.
+     * This is more efficient than creating new Complex objects each time.
+     * 
+     * @param array The Complex array to initialize
+     */
+    private static void initializeComplexArray(Complex[] array) {
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] == null) {
+                array[i] = new Complex(0, 0);
+            }
         }
     }
     
