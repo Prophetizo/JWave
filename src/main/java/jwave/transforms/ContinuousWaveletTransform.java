@@ -61,6 +61,12 @@ public class ContinuousWaveletTransform extends BasicTransform {
    * This should fit comfortably in L1/L2 cache.
    */
   private static final int CACHE_BLOCK_SIZE = 64;
+  
+  /**
+   * Minimum number of scales per fork/join task.
+   * Below this threshold, tasks compute directly rather than forking.
+   */
+  private static final int FORK_JOIN_THRESHOLD = 4;
 
   /**
    * Padding type for boundary handling.
@@ -636,7 +642,6 @@ public class ContinuousWaveletTransform extends BasicTransform {
     private final double samplingRate;
     private final int startScale;
     private final int endScale;
-    private static final int THRESHOLD = 4; // Minimum scales per task
     
     CWTTask(double[] signal, double[] scales, Complex[][] coefficients, 
             double samplingRate, int startScale, int endScale) {
@@ -650,7 +655,7 @@ public class ContinuousWaveletTransform extends BasicTransform {
     
     @Override
     protected void compute() {
-      if (endScale - startScale <= THRESHOLD) {
+      if (endScale - startScale <= FORK_JOIN_THRESHOLD) {
         // Compute directly
         for (int scaleIdx = startScale; scaleIdx < endScale; scaleIdx++) {
           double scale = scales[scaleIdx];
