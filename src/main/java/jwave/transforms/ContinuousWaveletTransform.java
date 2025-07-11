@@ -512,6 +512,12 @@ public class ContinuousWaveletTransform extends BasicTransform {
     int signalLength = signal.length;
     int nScales = scales.length;
     
+    // Check if we should use parallel processing
+    if (!shouldUseParallel(nScales, signalLength)) {
+      // Fall back to sequential for small scale counts
+      return transformFFT(signal, scales, samplingRate);
+    }
+    
     // Pad signal to next power of 2 for FFT efficiency
     int paddedLength = MathUtils.nextPowerOfTwo(signalLength);
     double[] paddedSignal = padSignal(signal, paddedLength);
@@ -525,12 +531,6 @@ public class ContinuousWaveletTransform extends BasicTransform {
     // Create time axis and initialize coefficient matrix
     double[] timeAxis = createTimeAxis(signalLength, samplingRate);
     Complex[][] coefficients = initializeCoefficients(nScales, signalLength);
-    
-    // Check if we should use parallel processing
-    if (!shouldUseParallel(nScales, signalLength)) {
-      // Fall back to sequential for small scale counts
-      return transformFFT(signal, scales, samplingRate);
-    }
     
     // Parallel processing across scales
     // For FFT-based method, parallelizing over scales is more efficient
