@@ -1,10 +1,10 @@
 package jwave.utils;
 
 import java.util.Arrays;
+import java.util.ArrayDeque;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import jwave.datatypes.natives.Complex;
 
 /**
@@ -41,8 +41,9 @@ public class ArrayBufferPool {
     private static final int MAX_ARRAYS_PER_BUCKET = 4;
     
     // Separate pools for different array types
-    private final Map<Integer, Queue<double[]>> doubleArrayPool = new ConcurrentHashMap<>();
-    private final Map<Integer, Queue<Complex[]>> complexArrayPool = new ConcurrentHashMap<>();
+    // Since this is thread-local, we can use non-concurrent collections for better performance
+    private final Map<Integer, Queue<double[]>> doubleArrayPool = new HashMap<>();
+    private final Map<Integer, Queue<Complex[]>> complexArrayPool = new HashMap<>();
     
     /**
      * Private constructor - use getInstance() to get thread-local instance.
@@ -76,7 +77,7 @@ public class ArrayBufferPool {
         
         int bucketSize = nextPowerOfTwo(minSize);
         Queue<double[]> bucket = doubleArrayPool.computeIfAbsent(bucketSize, 
-            k -> new ConcurrentLinkedQueue<>());
+            k -> new ArrayDeque<>());
         
         double[] array = bucket.poll();
         if (array == null) {
@@ -126,7 +127,7 @@ public class ArrayBufferPool {
         
         int bucketSize = nextPowerOfTwo(minSize);
         Queue<Complex[]> bucket = complexArrayPool.computeIfAbsent(bucketSize, 
-            k -> new ConcurrentLinkedQueue<>());
+            k -> new ArrayDeque<>());
         
         Complex[] array = bucket.poll();
         if (array == null) {

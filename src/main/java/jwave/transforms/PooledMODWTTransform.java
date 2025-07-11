@@ -207,6 +207,10 @@ public class PooledMODWTTransform extends MODWTTransform {
         Complex[] productFFT = pool.borrowComplexArray(N);
         double[] output = pool.borrowDoubleArray(N);
         
+        Complex[] signalFFT = null;
+        Complex[] filterFFT = null;
+        Complex[] inversed = null;
+        
         try {
             // Clear arrays
             Arrays.fill(paddedFilter, 0, N, 0.0);
@@ -225,8 +229,8 @@ public class PooledMODWTTransform extends MODWTTransform {
             }
             
             // Compute FFTs
-            Complex[] signalFFT = fft.forward(signalComplex);
-            Complex[] filterFFT = fft.forward(filterComplex);
+            signalFFT = fft.forward(signalComplex);
+            filterFFT = fft.forward(filterComplex);
             
             // Pointwise multiplication in frequency domain
             // IMPORTANT: Perform in-place to avoid allocating new Complex objects.
@@ -245,7 +249,7 @@ public class PooledMODWTTransform extends MODWTTransform {
             // Note: FFT.reverse() returns a new array internally. By using PooledFastFourierTransform
             // in the constructor, we minimize allocations in the conversion between double[] and Complex[].
             // The core FFT algorithm allocations are harder to eliminate without modifying the FFT itself.
-            Complex[] inversed = fft.reverse(productFFT);
+            inversed = fft.reverse(productFFT);
             
             // Extract real part directly
             for (int i = 0; i < N; i++) {
@@ -266,6 +270,18 @@ public class PooledMODWTTransform extends MODWTTransform {
             pool.returnComplexArray(filterComplex);
             pool.returnComplexArray(productFFT);
             pool.returnDoubleArray(output);
+            
+            // Return FFT-allocated arrays if they were created
+            // These arrays are allocated by FFT operations and need to be returned to prevent memory leaks
+            if (signalFFT != null) {
+                pool.returnComplexArray(signalFFT);
+            }
+            if (filterFFT != null) {
+                pool.returnComplexArray(filterFFT);
+            }
+            if (inversed != null) {
+                pool.returnComplexArray(inversed);
+            }
         }
     }
     
@@ -283,6 +299,10 @@ public class PooledMODWTTransform extends MODWTTransform {
         Complex[] filterComplex = pool.borrowComplexArray(N);
         Complex[] productFFT = pool.borrowComplexArray(N);
         double[] output = pool.borrowDoubleArray(N);
+        
+        Complex[] signalFFT = null;
+        Complex[] filterFFT = null;
+        Complex[] inversed = null;
         
         try {
             // Clear arrays
@@ -302,8 +322,8 @@ public class PooledMODWTTransform extends MODWTTransform {
             }
             
             // Compute FFTs
-            Complex[] signalFFT = fft.forward(signalComplex);
-            Complex[] filterFFT = fft.forward(filterComplex);
+            signalFFT = fft.forward(signalComplex);
+            filterFFT = fft.forward(filterComplex);
             
             // For the adjoint operation, multiply by conjugate of filter FFT
             // IMPORTANT: Perform in-place to avoid allocating new Complex objects.
@@ -322,7 +342,7 @@ public class PooledMODWTTransform extends MODWTTransform {
             // Note: FFT.reverse() returns a new array internally. By using PooledFastFourierTransform
             // in the constructor, we minimize allocations in the conversion between double[] and Complex[].
             // The core FFT algorithm allocations are harder to eliminate without modifying the FFT itself.
-            Complex[] inversed = fft.reverse(productFFT);
+            inversed = fft.reverse(productFFT);
             
             // Extract real part directly
             for (int i = 0; i < N; i++) {
@@ -343,6 +363,18 @@ public class PooledMODWTTransform extends MODWTTransform {
             pool.returnComplexArray(filterComplex);
             pool.returnComplexArray(productFFT);
             pool.returnDoubleArray(output);
+            
+            // Return FFT-allocated arrays if they were created
+            // These arrays are allocated by FFT operations and need to be returned to prevent memory leaks
+            if (signalFFT != null) {
+                pool.returnComplexArray(signalFFT);
+            }
+            if (filterFFT != null) {
+                pool.returnComplexArray(filterFFT);
+            }
+            if (inversed != null) {
+                pool.returnComplexArray(inversed);
+            }
         }
     }
     

@@ -48,6 +48,8 @@ public class PooledFastFourierTransform extends FastFourierTransform {
                 return Arrays.copyOf(output, 2 * n);
             } finally {
                 pool.returnDoubleArray(output);
+                // Return the result array to the pool to prevent memory leak
+                pool.returnComplexArray(result);
             }
             
         } finally {
@@ -88,6 +90,8 @@ public class PooledFastFourierTransform extends FastFourierTransform {
                 return Arrays.copyOf(output, n);
             } finally {
                 pool.returnDoubleArray(output);
+                // Return the result array to the pool to prevent memory leak
+                pool.returnComplexArray(result);
             }
             
         } finally {
