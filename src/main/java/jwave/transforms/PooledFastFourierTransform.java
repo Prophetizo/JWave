@@ -33,7 +33,7 @@ public class PooledFastFourierTransform extends FastFourierTransform {
             }
             
             // Perform FFT using parent implementation
-            Complex[] result = forward(complex);
+            Complex[] result = super.forward(complex);
             
             // Borrow output array
             double[] output = pool.borrowDoubleArray(2 * n);
@@ -74,7 +74,7 @@ public class PooledFastFourierTransform extends FastFourierTransform {
             }
             
             // Perform inverse FFT using parent implementation
-            Complex[] result = reverse(complex);
+            Complex[] result = super.reverse(complex);
             
             // Borrow output array
             double[] output = pool.borrowDoubleArray(n);

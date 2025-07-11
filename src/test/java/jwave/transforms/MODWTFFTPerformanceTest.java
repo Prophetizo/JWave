@@ -44,9 +44,17 @@ public class MODWTFFTPerformanceTest {
         modwtSym8 = new MODWTTransform(new Symlet8());
     }
     
+    /**
+     * Helper method to skip performance tests when requested.
+     * Call this at the beginning of performance test methods.
+     */
+    private void skipIfPerformanceTestsDisabled() {
+        assumeFalse("Skipping performance test", SKIP_PERFORMANCE_TESTS);
+    }
+    
     @Test
     public void testConvolutionPerformanceComparison() {
-        assumeFalse("Skipping performance test", SKIP_PERFORMANCE_TESTS);
+        skipIfPerformanceTestsDisabled();
         
         System.out.println("\n=== MODWT Convolution Performance: Direct vs FFT ===");
         System.out.println("Warmup runs: " + WARMUP_RUNS + ", Benchmark runs: " + BENCHMARK_RUNS);
@@ -83,7 +91,7 @@ public class MODWTFFTPerformanceTest {
     
     @Test
     public void testBreakEvenPoint() {
-        assumeFalse("Skipping performance test", SKIP_PERFORMANCE_TESTS);
+        skipIfPerformanceTestsDisabled();
         
         System.out.println("\n=== Finding Break-Even Point for FFT Convolution ===");
         
@@ -114,7 +122,7 @@ public class MODWTFFTPerformanceTest {
     
     @Test
     public void testLargeScalePerformance() {
-        assumeFalse("Skipping performance test", SKIP_PERFORMANCE_TESTS);
+        skipIfPerformanceTestsDisabled();
         
         System.out.println("\n=== Large-Scale MODWT Performance Test ===");
         

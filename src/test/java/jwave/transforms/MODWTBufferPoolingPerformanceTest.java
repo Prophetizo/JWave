@@ -45,9 +45,17 @@ public class MODWTBufferPoolingPerformanceTest {
         pooledModwt = new PooledMODWTTransform(new Daubechies4());
     }
     
+    /**
+     * Helper method to skip performance tests when requested.
+     * Call this at the beginning of performance test methods.
+     */
+    private void skipIfPerformanceTestsDisabled() {
+        assumeFalse("Skipping performance test", SKIP_PERFORMANCE_TESTS);
+    }
+    
     @Test
     public void testGCPressureComparison() {
-        assumeFalse("Skipping performance test", SKIP_PERFORMANCE_TESTS);
+        skipIfPerformanceTestsDisabled();
         
         System.out.println("\n=== MODWT Buffer Pooling Performance Test ===");
         System.out.println("Signal size: " + SIGNAL_SIZE);
@@ -74,7 +82,7 @@ public class MODWTBufferPoolingPerformanceTest {
     
     @Test
     public void testFFTConvolutionPooling() {
-        assumeFalse("Skipping performance test", SKIP_PERFORMANCE_TESTS);
+        skipIfPerformanceTestsDisabled();
         
         System.out.println("\n=== FFT Convolution Pooling Test ===");
         
