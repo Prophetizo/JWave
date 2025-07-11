@@ -229,8 +229,16 @@ public class PooledMODWTTransform extends MODWTTransform {
             Complex[] filterFFT = fft.forward(filterComplex);
             
             // Pointwise multiplication in frequency domain
+            // IMPORTANT: Perform in-place to avoid allocating new Complex objects.
+            // Using mul() would create new Complex instances, replacing our pooled objects
+            // and defeating the purpose of the pool.
             for (int i = 0; i < N; i++) {
-                productFFT[i] = signalFFT[i].mul(filterFFT[i]);
+                double real = signalFFT[i].getReal() * filterFFT[i].getReal() - 
+                              signalFFT[i].getImag() * filterFFT[i].getImag();
+                double imag = signalFFT[i].getReal() * filterFFT[i].getImag() + 
+                              signalFFT[i].getImag() * filterFFT[i].getReal();
+                productFFT[i].setReal(real);
+                productFFT[i].setImag(imag);
             }
             
             // Inverse FFT - reuse productFFT array for result
@@ -297,9 +305,17 @@ public class PooledMODWTTransform extends MODWTTransform {
             Complex[] signalFFT = fft.forward(signalComplex);
             Complex[] filterFFT = fft.forward(filterComplex);
             
-            // For the adjoint operation, conjugate the filter FFT
+            // For the adjoint operation, multiply by conjugate of filter FFT
+            // IMPORTANT: Perform in-place to avoid allocating new Complex objects.
+            // Using mul() and conjugate() would create new instances.
             for (int i = 0; i < N; i++) {
-                productFFT[i] = signalFFT[i].mul(filterFFT[i].conjugate());
+                // Conjugate of filter is (real, -imag)
+                double real = signalFFT[i].getReal() * filterFFT[i].getReal() + 
+                              signalFFT[i].getImag() * filterFFT[i].getImag();
+                double imag = signalFFT[i].getImag() * filterFFT[i].getReal() - 
+                              signalFFT[i].getReal() * filterFFT[i].getImag();
+                productFFT[i].setReal(real);
+                productFFT[i].setImag(imag);
             }
             
             // Inverse FFT - reuse productFFT array for result
