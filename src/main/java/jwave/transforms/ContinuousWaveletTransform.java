@@ -55,6 +55,12 @@ public class ContinuousWaveletTransform extends BasicTransform {
   private static final int SMALL_SIGNAL_LENGTH = 256;    // Small signals need more scales to benefit from parallelization
   private static final int SCALES_THRESHOLD_SMALL = 16;  // Minimum scales for small signals
   private static final int SCALES_THRESHOLD_LARGE = 8;   // Minimum scales for larger signals
+  
+  /**
+   * Block size for cache-friendly processing.
+   * This should fit comfortably in L1/L2 cache.
+   */
+  private static final int CACHE_BLOCK_SIZE = 64;
 
   /**
    * Padding type for boundary handling.
@@ -469,13 +475,18 @@ public class ContinuousWaveletTransform extends BasicTransform {
       return transform(signal, scales, samplingRate);
     }
     
-    // Use parallel streams for scale processing
-    IntStream.range(0, nScales).parallel().forEach(scaleIdx -> {
-      double scale = scales[scaleIdx];
+    // Use blocked parallel processing for better cache performance
+    // Process in blocks to improve cache locality
+    IntStream.range(0, (signalLength + CACHE_BLOCK_SIZE - 1) / CACHE_BLOCK_SIZE).parallel().forEach(blockIdx -> {
+      int startTime = blockIdx * CACHE_BLOCK_SIZE;
+      int endTime = Math.min(startTime + CACHE_BLOCK_SIZE, signalLength);
       
-      // For each time point in the signal
-      for (int timeIdx = 0; timeIdx < signalLength; timeIdx++) {
-        coefficients[scaleIdx][timeIdx] = computeCoefficient(signal, timeIdx, scale, samplingRate);
+      // Process all scales for this time block (better cache locality)
+      for (int scaleIdx = 0; scaleIdx < nScales; scaleIdx++) {
+        double scale = scales[scaleIdx];
+        for (int timeIdx = startTime; timeIdx < endTime; timeIdx++) {
+          coefficients[scaleIdx][timeIdx] = computeCoefficient(signal, timeIdx, scale, samplingRate);
+        }
       }
     });
     
@@ -516,6 +527,8 @@ public class ContinuousWaveletTransform extends BasicTransform {
     }
     
     // Parallel processing across scales
+    // For FFT-based method, parallelizing over scales is more efficient
+    // since each scale requires a full FFT/IFFT operation
     IntStream.range(0, nScales).parallel().forEach(scaleIdx -> {
       double scale = scales[scaleIdx];
       
