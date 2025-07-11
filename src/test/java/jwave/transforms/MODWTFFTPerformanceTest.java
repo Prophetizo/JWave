@@ -7,6 +7,7 @@ import jwave.transforms.wavelets.daubechies.Daubechies8;
 import jwave.transforms.wavelets.daubechies.Daubechies16;
 import jwave.transforms.wavelets.daubechies.Daubechies20;
 import jwave.transforms.wavelets.symlets.Symlet8;
+import jwave.utils.TestUtils;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,10 +27,6 @@ public class MODWTFFTPerformanceTest {
     private static final int BENCHMARK_RUNS = 10;
     private static final long RANDOM_SEED = 42L;
     
-    // Check if we should skip performance tests (useful for CI)
-    private static final boolean SKIP_PERFORMANCE_TESTS = 
-        Boolean.parseBoolean(System.getProperty("jwave.test.skipPerformance", "false"));
-    
     private MODWTTransform modwtHaar;
     private MODWTTransform modwtDb4;
     private MODWTTransform modwtDb20;
@@ -45,10 +42,7 @@ public class MODWTFFTPerformanceTest {
     
     @Test
     public void testConvolutionPerformanceComparison() {
-        if (SKIP_PERFORMANCE_TESTS) {
-            System.out.println("Skipping performance test (jwave.test.skipPerformance=true)");
-            return;
-        }
+        TestUtils.skipIfPerformanceTestsDisabled();
         
         System.out.println("\n=== MODWT Convolution Performance: Direct vs FFT ===");
         System.out.println("Warmup runs: " + WARMUP_RUNS + ", Benchmark runs: " + BENCHMARK_RUNS);
@@ -85,10 +79,7 @@ public class MODWTFFTPerformanceTest {
     
     @Test
     public void testBreakEvenPoint() {
-        if (SKIP_PERFORMANCE_TESTS) {
-            System.out.println("Skipping performance test (jwave.test.skipPerformance=true)");
-            return;
-        }
+        TestUtils.skipIfPerformanceTestsDisabled();
         
         System.out.println("\n=== Finding Break-Even Point for FFT Convolution ===");
         
@@ -119,10 +110,7 @@ public class MODWTFFTPerformanceTest {
     
     @Test
     public void testLargeScalePerformance() {
-        if (SKIP_PERFORMANCE_TESTS) {
-            System.out.println("Skipping performance test (jwave.test.skipPerformance=true)");
-            return;
-        }
+        TestUtils.skipIfPerformanceTestsDisabled();
         
         System.out.println("\n=== Large-Scale MODWT Performance Test ===");
         
