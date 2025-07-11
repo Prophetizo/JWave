@@ -119,7 +119,9 @@ public class ArrayBufferPool {
         
         // Don't pool very large arrays
         if (minSize > MAX_POOLED_SIZE) {
-            return new Complex[minSize];
+            Complex[] array = new Complex[minSize];
+            initializeComplexArray(array);
+            return array;
         }
         
         int bucketSize = nextPowerOfTwo(minSize);
