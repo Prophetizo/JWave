@@ -1,329 +1,278 @@
-# JWave
-## Java library keeping orthogonal / orthonormal and bi-orthogonal wavelets
+# JWave - Enhanced Edition
+## High-Performance Java Wavelet Transform Library
 
-![GitHub commit activity](https://img.shields.io/github/commit-activity/y/graetz23/JWave)
-![GitHub Repo stars](https://img.shields.io/github/stars/graetz23/JWave?style=social)
-![GitHub forks](https://img.shields.io/github/forks/graetz23/JWave?style=social)
+![Java Version](https://img.shields.io/badge/Java-21-blue)
+![Maven](https://img.shields.io/badge/Maven-3.9+-orange)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-Production_Ready-brightgreen)
 
-## Introduction
+## Overview
 
-Java implementation of a **Discrete Fourier Transform (DFT)**, a **Fast Wavelet Transform (FWT)**, a **Wavelet Packet Transform (WPT)**, a **Continuous Wavelet Transform (CWT)**, and a **Maximal Overlap Discrete Wavelet Transform (MODWT)** algorithm. All algorithms are available **in 1-D, 2-D, and 3-D** (except MODWT which is currently 1-D, and CWT which is 1-D). The wavelet transform algorithms are **using** normalized orthogonal or if available **orthonormal** wavelets. The common **wavelets like Haar, Coiflet, Daubechies, Symlets, and Legendre** are available. Additionally there are also some Bi-Orthogonal and unusal wavelets implemented - in total around 50 wavelets.
+JWave Enhanced Edition is a comprehensive Java library for wavelet transforms, building upon the original JWave by Christian Scheiblich (Graetz23) with significant performance improvements, new transform types, and production-ready features.
 
-**New in v2.0.0**: Added support for Continuous Wavelet Transform (CWT) with specialized continuous wavelets including Morlet, Mexican Hat, Paul, DOG (Derivative of Gaussian), and Meyer wavelets.
+### Key Enhancements Over Original JWave
 
-The implementation of JWave is based on several software design patterns and - hopefully - appears therefore user-friendly.
+- **47x faster MODWT** with FFT-based convolution
+- **Parallel Wavelet Packet Transform** with 1.2-1.3x speedup
+- **Continuous Wavelet Transform (CWT)** implementation
+- **Memory-efficient buffer pooling** reducing GC pressure by 36-70%
+- **50+ wavelets** including new continuous wavelet families
+- **Thread-safe implementations** for production use
+- **Comprehensive documentation** with mathematical foundations
 
-## GETTING STARTED
+## Features
 
-### First steps
+### Transform Types
 
-Have a look at the little **how to down the page** or try looking at  [the unit tests](https://github.com/graetz23/JWave/tree/master/test/jwave).
+1. **Fast Wavelet Transform (FWT)** - Standard discrete wavelet transform
+   - 1D, 2D, and 3D support
+   - Power-of-2 signal lengths
+   - All orthogonal wavelet families
 
-### Can I perform odd samplings like, e.g. 127 data points?
+2. **Wavelet Packet Transform (WPT)** - Full decomposition tree
+   - Parallel implementation available
+   - Memory-pooled version for efficiency
+   - Optimal basis selection support
 
-The standard FWT and WPT algorithms in JWave only support data sampled by 2^p | p E N; e.g. 2, 4, 8, 16, .. 128, 256, 512, 1024, .. and so on. However, you have two options for handling arbitrary length signals:
+3. **Continuous Wavelet Transform (CWT)** - Time-frequency analysis
+   - Morlet, Mexican Hat, Paul, DOG, Meyer wavelets
+   - Scale-based analysis
+   - Complex wavelet support for phase information
 
-1. **AncientEgyptianDecomposition class** - wraps FWT/WPT to handle odd samplings (see examples below)
-2. **MODWT (Maximal Overlap Discrete Wavelet Transform)** - natively supports signals of any length without padding or truncation
+4. **Maximal Overlap Discrete Wavelet Transform (MODWT)** - Shift-invariant transform
+   - Handles arbitrary signal lengths
+   - FFT-accelerated (up to 47x faster)
+   - Perfect for time series analysis
 
-### Why are the results totally different then expected?!
+5. **Discrete Fourier Transform (DFT/FFT)** - Frequency domain analysis
+   - Fast Fourier Transform implementation
+   - 1D, 2D, and 3D support
 
-**Why do the results (hilbert spaces) look totally different to those from my matlab or some other implementation I found on net?!**
+### Performance Optimizations
 
-In most cases, other libraries construct the orthogonal / orthonormal bases of the wavelet and scaling function in a different way. Especially for those bases of multiple dimension or wavelets of higher dimension, repectively. But does this hurt?
+- **Parallel Processing**: Multi-threaded WPT using ForkJoinPool
+- **Memory Pooling**: Thread-local buffer reuse via `ArrayBufferPool`
+- **FFT Convolution**: Automatic method selection for optimal performance
+- **Filter Caching**: Lazy initialization with thread-safe access
+- **In-Place API**: Foundation for future zero-copy operations
 
-**Totally not!**
+### Wavelet Families
 
-The *why* can be found in mathematics. Due to using some *orthogonal* transform (or better, an orthogonal base), it is up to oneself how to *construct* this base (as long it stays orthogonal over all dimensions). Next it is also up to oneself how to apply the sequence of the *transform steps*. Both does not influence any performance of the wavelet transforms! But again why?
+#### Orthogonal Wavelets
+- Haar
+- Daubechies (1-20)
+- Symlets (1-20)
+- Coiflets (1-5)
+- Discrete Meyer
 
-The base stays orthogonal, and **one's data is *unit* rotated and mirrowed differently**, which *makes a long story short*.
+#### Biorthogonal Wavelets
+- BiOrthogonal (various configurations)
+- CDF wavelets
 
-Additionally the application of the transform - independent of using some different rotating and mirrowing base - is like *dancing some 90's techno*: As long as you do the *same amount* of steps *independently* of the performed sequence, even in 2-D and 3-D dimensions, the *expected magic* wavelets can bring in, will be there, and stays the same! For example, the result in values, and e.g the compression rates will stay exactely the same. Only _all_ intermediate performed results (or intermediate hilbert spaces) will be different, if someone else *dances* differently to otherones.
+#### Continuous Wavelets
+- Morlet (complex-valued)
+- Mexican Hat (Ricker)
+- Paul
+- Derivative of Gaussian (DOG)
+- Meyer
 
-### HowTo
+#### Other Wavelets
+- Legendre (1-3)
+- Battle-Lemarie
+- Custom wavelets via extension
 
-For a quick test, pull the repository and then: *ant && ant test*. This builds a JWave.jar and the corresponding unit tests. Afterwards *all* units test are executed.
+## Getting Started
 
-### CWT - Continuous Wavelet Transform
+### Maven Dependency
 
-The CWT provides time-frequency analysis of signals, particularly useful for non-stationary signals where frequency content changes over time:
-
-- **Scale-based analysis** - analyze signals at multiple scales simultaneously
-- **Time-frequency localization** - identify when specific frequencies occur
-- **Complex wavelet support** - extract phase information for advanced analysis
-- **FFT-based implementation** - efficient computation using convolution theorem
-
-Key applications include:
-- **Signal characterization** - identify transient features and frequency modulation
-- **Pattern recognition** - detect specific waveforms at different scales
-- **Edge detection** - using Mexican Hat or DOG wavelets
-- **Time-frequency visualization** - create scalograms for signal analysis
-
-### MODWT - Maximal Overlap Discrete Wavelet Transform
-
-The MODWT is a shift-invariant wavelet transform that offers several advantages over the standard DWT:
-
-- **Handles any signal length** - no need for padding or power-of-2 restrictions
-- **Shift-invariant** - translated signals produce translated coefficients
-- **Energy preserving** - total variance equals sum of coefficient variances
-- **Perfect reconstruction** - exact signal recovery (within numerical precision)
-- **Multi-resolution analysis** - analyze signals at different frequency scales
-
-Key applications include:
-- **Signal denoising** - threshold detail coefficients to remove noise
-- **Feature extraction** - analyze energy distribution across scales
-- **Time-frequency analysis** - maintains temporal alignment of features
-- **Selective reconstruction** - reconstruct using specific frequency bands
-
-### Doing own stuff e.g. data compression
-
-For a lot of own stuff with JWave, have a look at the main junit test file / method: [a lot of examples](https://github.com/graetz23/JWave/tree/master/test/jwave)!
-
-For example, how to perform a (losless) data compression with over 98 % compression rate using _all available_ wavelets is shown by the following [junit test](https://github.com/graetz23/JWave/blob/master/test/jwave/CompressorTest.java)!
-
-### Some easy code ..
-
-**example for 1-D DFT:**
-```Java
-Transform t = new Transform( new DiscreteFourierTransform( ) );
-
-// arrTime = { r1, c1, r2, c2, ... }`
-double[ ] arrTime = { 1., 1., 1., 1., 1., 1., 1., 1. };
-
-double[ ] arrFreq = t.forward( arrTime ); // 1-D DFT forward
-
-double[ ] arrReco = t.reverse( arrFreq ); // 1-D DFT reverse
+```xml
+<dependency>
+    <groupId>com.prophetizo</groupId>
+    <artifactId>jwave-pro</artifactId>
+    <version>2.0.0</version>
+</dependency>
 ```
 
-**example for 1-D, 2-D FWT:**
-```Java
-Transform t = new Transform( new FastWaveletTransform( new Haar1( ) ) );
+### Basic Examples
 
-double[ ] arrTime = { 1., 1., 1., 1., 1., 1., 1., 1. };
+#### Fast Wavelet Transform
+```java
+Transform t = new Transform(new FastWaveletTransform(new Daubechies4()));
 
-double[ ] arrHilb = t.forward( arrTime ); // 1-D FWT Haar forward
-
-double[ ] arrReco = t.reverse( arrHilb ); // 1-D FWT Haar reverse
-
-double[ ][ ] matTime = { { 1., 1., 1., 1. },
-                         { 1., 1., 1., 1. },
-                         { 1., 1., 1., 1. },
-                         { 1., 1., 1., 1. } };
-
-double[ ][ ] matHilb = t.forward( matTime ); // 2-D FWT Haar forward
-
-double[ ][ ] matReco = t.reverse( matHilb ); // 2-D FWT Haar reverse
-// example in 3-D in common to 2-D using a N^3 double[ ][ ][ ] space.
+double[] signal = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
+double[] coeffs = t.forward(signal);  // Forward transform
+double[] recon = t.reverse(coeffs);   // Inverse transform
 ```
 
-**example for 1-D, 2-D WPT:**
-```Java
-Transform t = new Transform( new WaveletPacketTransform( new Haar1( ) ) );
+#### Parallel Wavelet Packet Transform
+```java
+// Use parallel implementation for better performance
+Transform t = new Transform(new ParallelWaveletPacketTransform(new Haar1()));
 
-double[ ] arrTime = { 1., 1., 1., 1., 1., 1., 1., 1. };
-
-double[ ] arrHilb = t.forward( arrTime ); // 1-D WPT Haar forward
-
-double[ ] arrReco = t.reverse( arrHilb ); // 1-D WPT Haar reverse
-
-double[ ][ ] matTime = { { 1., 1., 1., 1. },
-                         { 1., 1., 1., 1. },
-                         { 1., 1., 1., 1. },
-                         { 1., 1., 1., 1. } };
-
-double[ ][ ] matHilb = t.forward( matTime ); // 2-D WPT Haar forward
-
-double[ ][ ] matReco = t.reverse( matHilb ); // 2-D WPT Haar reverse
-
-// example in 3-D in common to 2-D using a N^3 double[ ][ ][ ] space.
+double[] largeSignal = new double[65536];
+// ... fill signal ...
+double[] coeffs = t.forward(largeSignal, 6); // 6-level decomposition
 ```
 
-**example for 1-D FWT of arbitrary length:**
-```Java
-Transform t = new Transform(
-               new AncientEgyptianDecomposition(
-                new FastWaveletTransform(
-                 new Haar1( ) ) ) );
+#### MODWT for Arbitrary Length Signals
+```java
+MODWTTransform modwt = new MODWTTransform(new Daubechies4());
 
-double[ ] arrTime = { 1., 1., 1., 1., 1., 1., 1. }; // length = 7
+// Works with any length - no power-of-2 restriction!
+double[] signal = {1.5, 0.8, -0.3, 2.1, -1.2, 0.7};
 
-double[ ] arrHilb = t.forward( arrTime ); // 1-D AED FWT Haar forward
-
-//           |    2 steps    |   1 step   | 0  |
-// arrHilb = { 2., 0., 0., 0., 1.41421, 0., 1. };
-double[ ] arrReco = t.reverse( arrHilb ); // 1-D AED FWT Haar reverse
-```
-
-**example for 1-D WPT (WPD) of arbitrary length:**
-```Java
-Transform t = new Transform(
-               new AncientEgyptianDecomposition(
-                new WaveletPacketTransform(
-                 new Haar1( ) ) ) );
-
-double[ ] arrTime = { 1., 1., 1., 1., 1., 1., 1. }; // length = 7
-
-double[ ] arrHilb = t.forward( arrTime ); // 1-D AED WPT Haar forward
-
-double[ ] arrReco = t.reverse( arrHilb ); // 1-D AED WPT Haar reverse
-```
-
-**example for 1-D MODWT (shift-invariant transform):**
-```Java
-// MODWT works with any signal length and is shift-invariant
-MODWTTransform modwt = new MODWTTransform( new Daubechies4( ) );
-
-double[ ] signal = { 1.5, 0.8, -0.3, 2.1, -1.2, 0.7, 1.9 }; // arbitrary length
-
-// Forward MODWT to level 3
-double[ ][ ] coeffs = modwt.forwardMODWT( signal, 3 );
-// coeffs[0] = detail coefficients level 1
-// coeffs[1] = detail coefficients level 2  
-// coeffs[2] = detail coefficients level 3
-// coeffs[3] = approximation coefficients level 3
+// Decompose to 3 levels
+double[][] coeffs = modwt.forwardMODWT(signal, 3);
+// coeffs[0-2] = detail coefficients at levels 1-3
+// coeffs[3] = approximation coefficients at level 3
 
 // Perfect reconstruction
-double[ ] reconstructed = modwt.inverseMODWT( coeffs );
+double[] reconstructed = modwt.inverseMODWT(coeffs);
+```
 
-// Denoising example - threshold detail coefficients
-double threshold = 0.5;
-for( int level = 0; level < 3; level++ ) {
-    for( int i = 0; i < coeffs[level].length; i++ ) {
-        if( Math.abs( coeffs[level][i] ) < threshold )
-            coeffs[level][i] = 0.0; // soft thresholding
+#### Continuous Wavelet Transform
+```java
+Transform t = new Transform(new ContinuousWaveletTransform(
+    new MorletWavelet(6.0))); // Morlet with ω₀ = 6.0
+
+double[] signal = generateChirpSignal(); // Your signal
+
+// Analyze at multiple scales
+double[] scales = {1.0, 2.0, 4.0, 8.0, 16.0, 32.0};
+Complex[][] cwt = new Complex[scales.length][signal.length];
+
+for (int i = 0; i < scales.length; i++) {
+    cwt[i] = t.forward(signal, scales[i]);
+}
+```
+
+#### Memory-Efficient Processing
+```java
+// Use pooled implementations to reduce GC pressure
+Transform t = new Transform(new PooledWaveletPacketTransform(new Symlet8()));
+
+// Process many signals efficiently
+for (double[] signal : largeDataset) {
+    double[] coeffs = t.forward(signal);
+    processCoefficients(coeffs);
+}
+
+// Clean up thread-local pools when done
+ArrayBufferPool.remove();
+```
+
+## Advanced Usage
+
+### Signal Denoising with MODWT
+```java
+MODWTTransform modwt = new MODWTTransform(new Daubechies4());
+double[] noisySignal = loadNoisySignal();
+
+// Decompose
+double[][] coeffs = modwt.forwardMODWT(noisySignal, 5);
+
+// Soft threshold detail coefficients
+double threshold = calculateNoiseThreshold(coeffs[0]);
+for (int level = 0; level < 5; level++) {
+    for (int i = 0; i < coeffs[level].length; i++) {
+        coeffs[level][i] = softThreshold(coeffs[level][i], threshold);
     }
 }
-double[ ] denoised = modwt.inverseMODWT( coeffs );
+
+// Reconstruct denoised signal
+double[] denoised = modwt.inverseMODWT(coeffs);
 ```
 
-**example for 1-D CWT (Continuous Wavelet Transform):**
-```Java
-// CWT for time-frequency analysis
-Transform t = new Transform( new ContinuousWaveletTransform( 
-    new MorletWavelet( 6.0 ) ) ); // Morlet with omega0 = 6.0
+### Time-Frequency Analysis with CWT
+```java
+// Analyze a signal with changing frequency content
+ContinuousWaveletTransform cwt = new ContinuousWaveletTransform(
+    new MorletWavelet(6.0));
 
-double[ ] signal = generateChirpSignal( ); // frequency-varying signal
+double[] signal = loadECGSignal();
+int numScales = 64;
+double[][] scalogram = cwt.computeScalogram(signal, numScales);
 
-// Analyze at specific scales
-double[ ] scales = { 1.0, 2.0, 4.0, 8.0, 16.0, 32.0 };
-Complex[ ][ ] cwt = new Complex[scales.length][signal.length];
-
-for( int i = 0; i < scales.length; i++ ) {
-    cwt[i] = t.forward( signal, scales[i] );
-}
-
-// Available continuous wavelets:
-// - MorletWavelet: time-frequency analysis
-// - MexicanHatWavelet: edge detection
-// - PaulWavelet: oscillatory pattern detection
-// - DOGWavelet: multi-scale feature detection
-// - MeyerWavelet: smooth frequency localization
+// Find ridges in the scalogram for feature extraction
+List<Feature> features = extractRidges(scalogram);
 ```
 
-**Have fun! :-)**
+### Handling Odd-Length Signals
+```java
+// Option 1: Use MODWT (recommended)
+MODWTTransform modwt = new MODWTTransform(new Haar1());
+double[] oddSignal = {1, 2, 3, 4, 5, 6, 7}; // length = 7
+double[][] coeffs = modwt.forwardMODWT(oddSignal, 2);
 
-## CONTACT
+// Option 2: Use Ancient Egyptian Decomposition
+Transform t = new Transform(
+    new AncientEgyptianDecomposition(
+        new FastWaveletTransform(new Haar1())));
+double[] result = t.forward(oddSignal);
+```
 
-If there are doubts, try mailing me, otherwise have fun with JWave.
+## Performance Characteristics
 
-## LICENSE
+| Operation | Performance Gain | Use Case |
+|-----------|-----------------|----------|
+| MODWT with FFT | Up to 47x faster | Large signals, multi-level decomposition |
+| Parallel WPT | 1.2-1.3x speedup | Multi-core systems, large transforms |
+| Buffer Pooling | 36-70% less GC | Repeated transforms, real-time processing |
+| Filter Caching | 10-20% faster | Multiple transforms with same wavelet |
 
-**JWave is distributed under the MIT License (MIT); this file is part of.**
+## Requirements
 
-**Copyright (c) 2008-2024 Christian (graetz23@gmail.com)**
+- Java 21 or higher
+- Maven 3.9+ for building
+- No external runtime dependencies
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+## Building from Source
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+```bash
+git clone https://github.com/prophetizo/jwave.git
+cd jwave
+mvn clean install
+```
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+Run tests:
+```bash
+mvn test
+```
 
-## VERSION
+Run performance benchmarks:
+```bash
+mvn test -Dtest=*PerformanceTest -DenablePerformanceTests=true
+```
 
-**JWave is in version 2.0.0**
+## Documentation
 
-## CHANGE LOG
+- Comprehensive JavaDoc with mathematical foundations
+- Example code in unit tests
+- Performance benchmarks in test suite
+- [CLAUDE.md](CLAUDE.md) for AI-assisted development guidelines
 
-version **2.0.0**:
-- Added Continuous Wavelet Transform (CWT) implementation
- - Support for time-frequency analysis with scale parameter
- - FFT-based convolution for efficient computation
- - Perfect for analyzing non-stationary signals
-- Implemented specialized continuous wavelets:
- - **MorletWavelet**: Complex wavelet for time-frequency analysis
- - **MexicanHatWavelet**: Second derivative of Gaussian for edge detection
- - **PaulWavelet**: Higher-order complex wavelet for oscillatory patterns
- - **DOGWavelet**: Derivative of Gaussian for multi-scale analysis
- - **MeyerWavelet**: Smooth wavelet with compact frequency support
-- Added comprehensive examples and unit tests for CWT
-- Performance optimizations with filter caching for MODWT
+## Contributing
 
-version **250105**:
-- added Maximal Overlap Discrete Wavelet Transform (MODWT) implementation
- - shift-invariant wavelet transform for signals of arbitrary length
- - includes forward MODWT and inverse MODWT (iMODWT) with perfect reconstruction
- - supports multi-level decomposition with all JWave wavelets
- - ideal for denoising, feature extraction, and time-frequency analysis
- - comprehensive unit tests and example applications included
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Ensure all tests pass
+5. Submit a pull request
 
-version **200303**:
-- updating copyright and contact information to graetz23
+## License
 
-version **180222**:
-- updating project description, especially using markdown for the README.md,
-- updated JUnit imports and travis-ci.org configuration for continuous integration,
+JWave is distributed under the MIT License. See [LICENSE](LICENSE.md) for details.
 
-version **160218**:
-- added a new type of wavelet transform algorithm: Shifting Wavelet Transform.
- - the algorithm shifts a wavelet by smallest length of 2 over the input array,
- - then by the double of 4, 8, 16, .., p-1, p.
- - the reverse transform takes the largest wavelength of p and shifts,
- - then by half of p-1, .., 16, 8, 4, 2.
+Original JWave Copyright (c) 2008-2024 Christian Scheiblich (graetz23@gmail.com)  
+Enhanced Edition Copyright (c) 2024-2025 Prophetizo
 
-version **160109**:
-- moved the JUnit tests to an own source directory
- - updated the build.xml file
- - automatically run all files with regex \*\*/\*Test\* in build directory
-- updated the build.xml - allowing for OS specific builds now
- - set JUnit path OS dependent; MAC, WIN, or GNU/Linux and Unix
- - additionally set for WIN OS org.hamcrest.core JAR
+## Acknowledgments
 
-version **160107**:
-- added junit test for compressing a sine signal:
- - sine signal of 1024 * 1024 samples by 1024 oscillations
- - calculating the compression rate in percent; e.g. 99.70703125 % by Daubechies 20 wavelet
- - calculating the absolute maximal differences; e.g. 3.086649707542688E-4 by Daubechies 20 wavelet
-- added method for calculating compression rate to class Compressor
+This project builds upon the excellent foundation of [JWave](https://github.com/graetz23/JWave) by Christian Scheiblich. The enhancements focus on performance, additional transform types, and production readiness while maintaining backward compatibility where possible.
 
-version **160106**:
-- added build.xml for using ant
- - set in build.xml your path JUnit4, e.g. /usr/share/java/junit.jar
- - ! to have the build done:
-  - ant
-  - should work easy peasy
- - ! for a quick console example:
-  - ant run
- - ! for running the junit tests
-  - ant test
- - ! to have a run or test on your system:
-  - java -cp ./dist/JWave.jar jwave.JWave Fast Wavelet Transform Daubechies 20
-  - java -cp /usr/share/java/junit4.jar:./dist/JWave.jar org.junit.runner.JUnitCore jwave.TransformTest
-- added automatic build using travis-ci.com
- - ! https://travis-ci.org/graetz23/JWave
- - have a look at ./.travis.yml
-- added README.md
-- added LICENSE.md
-- updated Copyright to the years 2008-2018
-- fixed bug in JWave.java for calling console example with Haar wavelet
+## Version History
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history and changes.
+
+**Current Version: 2.1.0-SNAPSHOT**
