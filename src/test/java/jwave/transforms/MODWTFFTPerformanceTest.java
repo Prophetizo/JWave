@@ -9,6 +9,7 @@ import jwave.transforms.wavelets.daubechies.Daubechies20;
 import jwave.transforms.wavelets.symlets.Symlet8;
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assume.assumeFalse;
 
 import java.util.Random;
 
@@ -45,10 +46,7 @@ public class MODWTFFTPerformanceTest {
     
     @Test
     public void testConvolutionPerformanceComparison() {
-        if (SKIP_PERFORMANCE_TESTS) {
-            System.out.println("Skipping performance test (jwave.test.skipPerformance=true)");
-            return;
-        }
+        assumeFalse("Skipping performance test", SKIP_PERFORMANCE_TESTS);
         
         System.out.println("\n=== MODWT Convolution Performance: Direct vs FFT ===");
         System.out.println("Warmup runs: " + WARMUP_RUNS + ", Benchmark runs: " + BENCHMARK_RUNS);
@@ -85,10 +83,7 @@ public class MODWTFFTPerformanceTest {
     
     @Test
     public void testBreakEvenPoint() {
-        if (SKIP_PERFORMANCE_TESTS) {
-            System.out.println("Skipping performance test (jwave.test.skipPerformance=true)");
-            return;
-        }
+        assumeFalse("Skipping performance test", SKIP_PERFORMANCE_TESTS);
         
         System.out.println("\n=== Finding Break-Even Point for FFT Convolution ===");
         
@@ -119,10 +114,7 @@ public class MODWTFFTPerformanceTest {
     
     @Test
     public void testLargeScalePerformance() {
-        if (SKIP_PERFORMANCE_TESTS) {
-            System.out.println("Skipping performance test (jwave.test.skipPerformance=true)");
-            return;
-        }
+        assumeFalse("Skipping performance test", SKIP_PERFORMANCE_TESTS);
         
         System.out.println("\n=== Large-Scale MODWT Performance Test ===");
         

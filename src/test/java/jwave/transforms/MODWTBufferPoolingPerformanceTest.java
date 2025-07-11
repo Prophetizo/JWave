@@ -5,15 +5,22 @@ import jwave.transforms.wavelets.daubechies.Daubechies20;
 import jwave.utils.ArrayBufferPool;
 import org.junit.Test;
 import org.junit.Before;
+import static org.junit.Assume.assumeFalse;
 
 import java.util.Random;
 
 /**
  * Performance test comparing standard MODWT with pooled MODWT to measure GC impact.
  * 
+ * To skip performance tests in CI, use: mvn test -Djwave.test.skipPerformance=true
+ * 
  * @author Stephen Romano
  */
 public class MODWTBufferPoolingPerformanceTest {
+    
+    // Skip performance tests if system property is set
+    private static final boolean SKIP_PERFORMANCE_TESTS = 
+        Boolean.parseBoolean(System.getProperty("jwave.test.skipPerformance", "false"));
     
     private static final int WARMUP_ITERATIONS = 100;
     private static final int TEST_ITERATIONS = 1000;
@@ -40,6 +47,8 @@ public class MODWTBufferPoolingPerformanceTest {
     
     @Test
     public void testGCPressureComparison() {
+        assumeFalse("Skipping performance test", SKIP_PERFORMANCE_TESTS);
+        
         System.out.println("\n=== MODWT Buffer Pooling Performance Test ===");
         System.out.println("Signal size: " + SIGNAL_SIZE);
         System.out.println("Decomposition levels: " + MAX_LEVEL);
@@ -65,6 +74,8 @@ public class MODWTBufferPoolingPerformanceTest {
     
     @Test
     public void testFFTConvolutionPooling() {
+        assumeFalse("Skipping performance test", SKIP_PERFORMANCE_TESTS);
+        
         System.out.println("\n=== FFT Convolution Pooling Test ===");
         
         // Use Daubechies-20 to trigger FFT convolution
@@ -99,7 +110,7 @@ public class MODWTBufferPoolingPerformanceTest {
         
         // Force GC before test
         System.gc();
-        System.runFinalization();
+        // System.runFinalization() is deprecated and will be removed
         Thread.yield();
         
         // Get initial memory stats
@@ -139,6 +150,7 @@ public class MODWTBufferPoolingPerformanceTest {
     
     @Test
     public void testCorrectnessOfPooledImplementation() {
+        // This test verifies correctness, not performance, so it always runs
         System.out.println("\n=== Correctness Verification ===");
         
         // Perform transforms
