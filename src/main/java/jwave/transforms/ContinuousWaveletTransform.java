@@ -599,7 +599,7 @@ public class ContinuousWaveletTransform extends BasicTransform {
    * Recursive action for parallel CWT computation using Fork/Join framework.
    * This provides more control over task granularity.
    */
-  private class CWTTask extends RecursiveAction {
+  private static class CWTTask extends RecursiveAction {
     private final double[] signal;
     private final double[] scales;
     private final Complex[][] coefficients;
