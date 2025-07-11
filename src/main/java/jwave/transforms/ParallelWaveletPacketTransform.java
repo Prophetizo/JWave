@@ -6,8 +6,6 @@ import jwave.exceptions.JWaveException;
 import jwave.exceptions.JWaveFailure;
 import java.util.Arrays;
 import java.util.concurrent.*;
-import java.util.List;
-import java.util.ArrayList;
 
 /**
  * Parallel implementation of Wavelet Packet Transform (WPT) that uses multiple threads
@@ -39,8 +37,9 @@ public class ParallelWaveletPacketTransform extends PooledWaveletPacketTransform
     
     /**
      * Minimum number of packets to justify parallel processing.
+     * With batching, we can efficiently handle more packets.
      */
-    private static final int MIN_PARALLEL_PACKETS = 4;
+    private static final int MIN_PARALLEL_PACKETS = 8;
     
     /**
      * The thread pool used for parallel execution.
@@ -113,7 +112,7 @@ public class ParallelWaveletPacketTransform extends PooledWaveletPacketTransform
     @Override
     public double[] reverse(double[] arrHilb, int level) throws JWaveException {
         if (!isBinary(arrHilb.length))
-            throw new JWaveFailure("WaveletPacketTransform#reverse - array length is not 2^p");
+            throw new JWaveFailure("ParallelWaveletPacketTransform#reverse - array length is not 2^p");
             
         int maxLevel = calcExponent(arrHilb.length);
         if (level < 0 || level > maxLevel)
@@ -184,26 +183,51 @@ public class ParallelWaveletPacketTransform extends PooledWaveletPacketTransform
     }
     
     /**
-     * Process a level in parallel using ForkJoinPool.
+     * Process a level in parallel using ForkJoinPool with batching.
      */
     private void processLevelParallel(double[] data, int h, int packets, boolean forward) {
-        List<Future<?>> futures = new ArrayList<>(packets);
+        // Use ForkJoinTask for efficient work distribution
+        WPTLevelTask rootTask = new WPTLevelTask(data, h, 0, packets, forward);
+        threadPool.invoke(rootTask);
+    }
+    
+    /**
+     * RecursiveAction for processing WPT packets with automatic work-stealing.
+     */
+    private class WPTLevelTask extends RecursiveAction {
+        private static final int PACKETS_PER_TASK_THRESHOLD = 16; // Process up to 16 packets per task
         
-        // Submit tasks for each packet
-        for (int p = 0; p < packets; p++) {
-            final int packetIndex = p;
-            Future<?> future = threadPool.submit(() -> 
-                processPacket(data, h, packetIndex, forward)
-            );
-            futures.add(future);
+        private final double[] data;
+        private final int packetSize;
+        private final int startPacket;
+        private final int endPacket;
+        private final boolean forward;
+        
+        WPTLevelTask(double[] data, int packetSize, int startPacket, int endPacket, boolean forward) {
+            this.data = data;
+            this.packetSize = packetSize;
+            this.startPacket = startPacket;
+            this.endPacket = endPacket;
+            this.forward = forward;
         }
         
-        // Wait for all packets to complete
-        for (Future<?> future : futures) {
-            try {
-                future.get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException("Parallel WPT processing failed", e);
+        @Override
+        protected void compute() {
+            int packetCount = endPacket - startPacket;
+            
+            // If small enough, process directly
+            if (packetCount <= PACKETS_PER_TASK_THRESHOLD) {
+                for (int p = startPacket; p < endPacket; p++) {
+                    processPacket(data, packetSize, p, forward);
+                }
+            } else {
+                // Split the work
+                int mid = startPacket + packetCount / 2;
+                WPTLevelTask leftTask = new WPTLevelTask(data, packetSize, startPacket, mid, forward);
+                WPTLevelTask rightTask = new WPTLevelTask(data, packetSize, mid, endPacket, forward);
+                
+                // Fork-join execution
+                invokeAll(leftTask, rightTask);
             }
         }
     }
