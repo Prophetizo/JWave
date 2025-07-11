@@ -38,12 +38,10 @@ import jwave.transforms.wavelets.Wavelet;
  */
 public class InPlaceFastWaveletTransform extends FastWaveletTransform {
     
-    /**
-     * Thread-local workspace buffer to avoid allocations in the wavelet operations.
-     * Each thread gets its own buffer to ensure thread safety.
-     */
-    private static final ThreadLocal<double[]> WORKSPACE_BUFFER = 
-        ThreadLocal.withInitial(() -> new double[0]);
+    // Note: Thread-local workspace buffer removed as current implementation
+    // uses the parent class methods and copies results back.
+    // A true in-place implementation would require modifying the wavelet
+    // base classes to support in-place operations.
     
     /**
      * Constructor with a Wavelet object.
@@ -63,23 +61,9 @@ public class InPlaceFastWaveletTransform extends FastWaveletTransform {
      * @throws JWaveException if array length is not a power of 2
      */
     public double[] forwardInPlace(double[] arrTime) throws JWaveException {
-        if (!isBinary(arrTime.length)) {
-            throw new JWaveFailure(
-                "InPlaceFastWaveletTransform.forwardInPlace - array length is not 2^p | p E N");
-        }
-        
-        int h = arrTime.length;
-        int transformWavelength = _wavelet.getTransformWavelength();
-        
-        // Get thread-local workspace
-        double[] workspace = getWorkspace(h);
-        
-        while (h >= transformWavelength) {
-            // Perform wavelet transform on the first h elements
-            transformInPlace(arrTime, h, workspace, true);
-            h = h >> 1;
-        }
-        
+        // For now, use the standard implementation until we have true in-place wavelets
+        double[] result = super.forward(arrTime);
+        System.arraycopy(result, 0, arrTime, 0, arrTime.length);
         return arrTime;
     }
     
@@ -92,29 +76,9 @@ public class InPlaceFastWaveletTransform extends FastWaveletTransform {
      * @throws JWaveException if parameters are invalid
      */
     public double[] forwardInPlace(double[] arrTime, int level) throws JWaveException {
-        if (!isBinary(arrTime.length)) {
-            throw new JWaveFailure(
-                "InPlaceFastWaveletTransform.forwardInPlace - array length is not 2^p | p E N");
-        }
-        
-        int maxLevel = calcExponent(arrTime.length);
-        if (level < 0 || level > maxLevel) {
-            throw new JWaveFailure("Invalid decomposition level: " + level);
-        }
-        
-        int h = arrTime.length;
-        int transformWavelength = _wavelet.getTransformWavelength();
-        int l = 0;
-        
-        // Get thread-local workspace
-        double[] workspace = getWorkspace(h);
-        
-        while (h >= transformWavelength && l < level) {
-            transformInPlace(arrTime, h, workspace, true);
-            h = h >> 1;
-            l++;
-        }
-        
+        // For now, use the standard implementation until we have true in-place wavelets
+        double[] result = super.forward(arrTime, level);
+        System.arraycopy(result, 0, arrTime, 0, arrTime.length);
         return arrTime;
     }
     
@@ -127,24 +91,9 @@ public class InPlaceFastWaveletTransform extends FastWaveletTransform {
      * @throws JWaveException if array length is not a power of 2
      */
     public double[] reverseInPlace(double[] arrHilb) throws JWaveException {
-        if (!isBinary(arrHilb.length)) {
-            throw new JWaveFailure(
-                "InPlaceFastWaveletTransform.reverseInPlace - array length is not 2^p | p E N");
-        }
-        
-        int transformWavelength = _wavelet.getTransformWavelength();
-        int h = transformWavelength;
-        
-        // Get thread-local workspace
-        double[] workspace = getWorkspace(arrHilb.length);
-        
-        if (arrHilb.length >= transformWavelength) {
-            while (h <= arrHilb.length) {
-                transformInPlace(arrHilb, h, workspace, false);
-                h = h << 1;
-            }
-        }
-        
+        // For now, use the standard implementation until we have true in-place wavelets
+        double[] result = super.reverse(arrHilb);
+        System.arraycopy(result, 0, arrHilb, 0, arrHilb.length);
         return arrHilb;
     }
     
@@ -157,71 +106,12 @@ public class InPlaceFastWaveletTransform extends FastWaveletTransform {
      * @throws JWaveException if parameters are invalid
      */
     public double[] reverseInPlace(double[] arrHilb, int level) throws JWaveException {
-        if (!isBinary(arrHilb.length)) {
-            throw new JWaveFailure(
-                "InPlaceFastWaveletTransform.reverseInPlace - array length is not 2^p | p E N");
-        }
-        
-        int maxLevel = calcExponent(arrHilb.length);
-        if (level < 0 || level > maxLevel) {
-            throw new JWaveFailure("Invalid decomposition level: " + level);
-        }
-        
-        int transformWavelength = _wavelet.getTransformWavelength();
-        int h = transformWavelength;
-        int steps = calcExponent(arrHilb.length);
-        
-        for (int l = level; l < steps; l++) {
-            h = h << 1;
-        }
-        
-        // Get thread-local workspace
-        double[] workspace = getWorkspace(arrHilb.length);
-        
-        while (h <= arrHilb.length && h >= transformWavelength) {
-            transformInPlace(arrHilb, h, workspace, false);
-            h = h << 1;
-        }
-        
+        // For now, use the standard implementation until we have true in-place wavelets
+        double[] result = super.reverse(arrHilb, level);
+        System.arraycopy(result, 0, arrHilb, 0, arrHilb.length);
         return arrHilb;
     }
     
-    /**
-     * Performs the actual in-place wavelet transform using a workspace buffer.
-     * This method modifies the first 'length' elements of the data array.
-     * 
-     * @param data The data array to transform in-place
-     * @param length The number of elements to transform
-     * @param workspace Temporary workspace array (must be at least 'length' size)
-     * @param forward true for forward transform, false for reverse
-     */
-    private void transformInPlace(double[] data, int length, double[] workspace, boolean forward) {
-        // Copy the section to be transformed to workspace
-        System.arraycopy(data, 0, workspace, 0, length);
-        
-        // Perform transform using the wavelet
-        double[] result = forward ? 
-            _wavelet.forward(workspace, length) : 
-            _wavelet.reverse(workspace, length);
-        
-        // Copy result back to original array
-        System.arraycopy(result, 0, data, 0, length);
-    }
-    
-    /**
-     * Gets or enlarges the thread-local workspace buffer.
-     * 
-     * @param minSize Minimum required size
-     * @return Workspace array of at least minSize
-     */
-    private static double[] getWorkspace(int minSize) {
-        double[] workspace = WORKSPACE_BUFFER.get();
-        if (workspace.length < minSize) {
-            workspace = new double[minSize];
-            WORKSPACE_BUFFER.set(workspace);
-        }
-        return workspace;
-    }
     
     /**
      * Standard forward transform that creates a copy (for API compatibility).

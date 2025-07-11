@@ -66,18 +66,25 @@ public class InPlaceTransformPerformanceTest {
             double[] signalCopy1 = Arrays.copyOf(signal, signal.length);
             double[] signalCopy2 = Arrays.copyOf(signal, signal.length);
             
-            // Standard transform
+            // Standard transform - returns new array
             FastWaveletTransform fwt = new FastWaveletTransform(wavelet);
             double[] standardForward = fwt.forward(signalCopy1, level);
             double[] standardReverse = fwt.reverse(standardForward, level);
             
-            // In-place transform
+            // In-place transform - modifies input array
             InPlaceFastWaveletTransform inPlaceFwt = new InPlaceFastWaveletTransform(wavelet);
             double[] inPlaceForward = inPlaceFwt.forwardInPlace(signalCopy2, level);
-            double[] inPlaceReverse = inPlaceFwt.reverseInPlace(inPlaceForward, level);
+            assertSame("In-place forward should return same array", signalCopy2, inPlaceForward);
             
+            // Compare forward transforms
             assertArrayEquals("Level " + level + " forward transform mismatch",
                              standardForward, inPlaceForward, DELTA);
+            
+            // Perform reverse transform
+            double[] inPlaceReverse = inPlaceFwt.reverseInPlace(inPlaceForward, level);
+            assertSame("In-place reverse should return same array", inPlaceForward, inPlaceReverse);
+            
+            // Compare reverse transforms
             assertArrayEquals("Level " + level + " reverse transform mismatch",
                              standardReverse, inPlaceReverse, DELTA);
         }
