@@ -46,12 +46,11 @@ public class TestDataLoader {
   public static double[] loadVector(String filename) throws IOException {
     List<Double> values = new ArrayList<>();
     
-    try (InputStream is = TestDataLoader.class.getResourceAsStream("/testdata/" + filename);
-         BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
-      
+    try (InputStream is = TestDataLoader.class.getResourceAsStream("/testdata/" + filename)) {
       if (is == null) {
         throw new FileNotFoundException("Test data file not found: " + filename);
       }
+      BufferedReader reader = new BufferedReader(new InputStreamReader(is));
       
       String line;
       while ((line = reader.readLine()) != null) {
