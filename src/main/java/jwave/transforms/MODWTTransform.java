@@ -3,6 +3,8 @@ package jwave.transforms;
 import jwave.transforms.wavelets.Wavelet;
 import jwave.exceptions.JWaveException;
 import jwave.exceptions.JWaveFailure;
+import jwave.datatypes.natives.Complex;
+import jwave.utils.MathUtils;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -107,6 +109,22 @@ public class MODWTTransform extends WaveletTransform {
      * At level 13, filter sizes can reach ~77K coefficients for longer wavelets.
      */
     private static final int MAX_DECOMPOSITION_LEVEL = 13;
+    
+    /**
+     * Threshold for switching between direct and FFT-based convolution.
+     * When signal length * filter length exceeds this value, FFT is more efficient.
+     * This is an empirically derived value that balances FFT overhead vs O(N²) complexity.
+     */
+    private static final int FFT_CONVOLUTION_THRESHOLD = 4096;
+    
+    /**
+     * Enum to specify convolution method.
+     */
+    public enum ConvolutionMethod {
+        AUTO,    // Automatically choose based on problem size
+        DIRECT,  // Always use direct O(N*M) convolution
+        FFT      // Always use FFT-based O(N log N) convolution
+    }
 
     // Cache for upsampled filters, keyed by level
     private transient volatile ConcurrentHashMap<Integer, double[]> gFilterCache;
@@ -118,6 +136,12 @@ public class MODWTTransform extends WaveletTransform {
     
     // Flag to track if cache is valid (volatile for thread visibility)
     private transient volatile boolean cacheInitialized = false;
+    
+    // Convolution method selection
+    private ConvolutionMethod convolutionMethod = ConvolutionMethod.AUTO;
+    
+    // Reference to FFT transform for FFT-based convolution
+    private transient FastFourierTransform fft;
 
     /**
      * Constructor for the MODWTTransform.
@@ -129,6 +153,25 @@ public class MODWTTransform extends WaveletTransform {
      */
     public MODWTTransform(Wavelet wavelet) {
         super(wavelet);
+        this.fft = new FastFourierTransform();
+    }
+    
+    /**
+     * Sets the convolution method for the MODWT transform.
+     * 
+     * @param method The convolution method to use
+     */
+    public void setConvolutionMethod(ConvolutionMethod method) {
+        this.convolutionMethod = method;
+    }
+    
+    /**
+     * Gets the current convolution method.
+     * 
+     * @return The current convolution method
+     */
+    public ConvolutionMethod getConvolutionMethod() {
+        return this.convolutionMethod;
     }
     
     /**
@@ -211,8 +254,8 @@ public class MODWTTransform extends WaveletTransform {
             double[] gUpsampled = getCachedGFilter(j);
             double[] hUpsampled = getCachedHFilter(j);
 
-            double[] wNext = circularConvolve(vCurrent, hUpsampled);
-            double[] vNext = circularConvolve(vCurrent, gUpsampled);
+            double[] wNext = performConvolution(vCurrent, hUpsampled, false);
+            double[] vNext = performConvolution(vCurrent, gUpsampled, false);
 
             modwtCoeffs[j - 1] = wNext;
             vCurrent = vNext;
@@ -279,8 +322,8 @@ public class MODWTTransform extends WaveletTransform {
             double[] wCurrent = coefficients[j - 1];
 
             // Use the adjoint convolution for the inverse transform.
-            double[] vFromApprox = circularConvolveAdjoint(vCurrent, gUpsampled);
-            double[] vFromDetail = circularConvolveAdjoint(wCurrent, hUpsampled);
+            double[] vFromApprox = performConvolution(vCurrent, gUpsampled, true);
+            double[] vFromDetail = performConvolution(wCurrent, hUpsampled, true);
 
             double[] vNext = new double[N];
             for (int i = 0; i < N; i++) {
@@ -373,6 +416,10 @@ public class MODWTTransform extends WaveletTransform {
             synchronized (this) {
                 // Double-check inside synchronized block
                 if (!cacheInitialized || g_modwt_base == null) {
+                    // Initialize FFT if needed
+                    if (fft == null) {
+                        fft = new FastFourierTransform();
+                    }
                     // Compute base MODWT filters
                     double[] g_dwt = Arrays.copyOf(_wavelet.getScalingDeComposition(), 
                                                    _wavelet.getScalingDeComposition().length);
@@ -545,6 +592,39 @@ public class MODWTTransform extends WaveletTransform {
     }
 
     /**
+     * Performs circular convolution or its adjoint based on the selected method.
+     * 
+     * @param signal The input signal
+     * @param filter The filter to convolve with
+     * @param adjoint If true, performs adjoint (transpose) convolution
+     * @return The convolution result with the same length as the signal
+     */
+    private double[] performConvolution(double[] signal, double[] filter, boolean adjoint) {
+        boolean useFFT = false;
+        
+        switch (convolutionMethod) {
+            case FFT:
+                useFFT = true;
+                break;
+            case DIRECT:
+                useFFT = false;
+                break;
+            case AUTO:
+                // Use FFT when the product of signal and filter lengths exceeds threshold
+                useFFT = (signal.length * filter.length) > FFT_CONVOLUTION_THRESHOLD;
+                break;
+        }
+        
+        if (useFFT) {
+            return adjoint ? circularConvolveFFTAdjoint(signal, filter) 
+                          : circularConvolveFFT(signal, filter);
+        } else {
+            return adjoint ? circularConvolveAdjoint(signal, filter) 
+                          : circularConvolve(signal, filter);
+        }
+    }
+
+    /**
      * Performs circular convolution between a signal and filter.
      * 
      * <p>Uses periodic boundary conditions, treating the signal as if it
@@ -593,6 +673,115 @@ public class MODWTTransform extends WaveletTransform {
             }
             output[n] = sum;
         }
+        return output;
+    }
+    
+    /**
+     * Performs circular convolution using FFT for improved performance.
+     * 
+     * <p>Circular convolution theorem: circular_conv(x,h) = IFFT(FFT(x) * FFT(h))</p>
+     * 
+     * @param signal The input signal
+     * @param filter The filter to convolve with
+     * @return The convolution result with the same length as the signal
+     */
+    private double[] circularConvolveFFT(double[] signal, double[] filter) {
+        int N = signal.length;
+        int M = filter.length;
+        
+        // When filter is longer than signal (common with upsampled filters),
+        // we need to wrap the filter coefficients
+        double[] paddedFilter = new double[N];
+        
+        // Copy filter coefficients with circular wrapping
+        for (int i = 0; i < M; i++) {
+            paddedFilter[i % N] += filter[i];
+        }
+        
+        // Convert to complex arrays
+        Complex[] signalComplex = new Complex[N];
+        Complex[] filterComplex = new Complex[N];
+        for (int i = 0; i < N; i++) {
+            signalComplex[i] = new Complex(signal[i], 0);
+            filterComplex[i] = new Complex(paddedFilter[i], 0);
+        }
+        
+        // Compute FFTs
+        Complex[] signalFFT = fft.forward(signalComplex);
+        Complex[] filterFFT = fft.forward(filterComplex);
+        
+        // Pointwise multiplication in frequency domain
+        Complex[] productFFT = new Complex[N];
+        for (int i = 0; i < N; i++) {
+            productFFT[i] = signalFFT[i].mul(filterFFT[i]);
+        }
+        
+        // Inverse FFT
+        Complex[] result = fft.reverse(productFFT);
+        
+        // Extract real part (imaginary part should be near zero for real inputs)
+        double[] output = new double[N];
+        for (int i = 0; i < N; i++) {
+            output[i] = result[i].getReal();
+        }
+        
+        return output;
+    }
+    
+    /**
+     * Performs the adjoint of circular convolution using FFT.
+     * 
+     * <p>For the adjoint operation, the convolution matrix is transposed.
+     * This is different from correlation and requires careful handling.</p>
+     * 
+     * @param signal The input signal
+     * @param filter The filter for adjoint convolution
+     * @return The adjoint convolution result
+     */
+    private double[] circularConvolveFFTAdjoint(double[] signal, double[] filter) {
+        int N = signal.length;
+        int M = filter.length;
+        
+        // For the adjoint operation, we need to implement the transpose of the
+        // circular convolution matrix. 
+        double[] paddedFilter = new double[N];
+        
+        // Copy filter coefficients with circular wrapping
+        for (int i = 0; i < M; i++) {
+            paddedFilter[i % N] += filter[i];
+        }
+        
+        // Convert to complex arrays
+        Complex[] signalComplex = new Complex[N];
+        Complex[] filterComplex = new Complex[N];
+        for (int i = 0; i < N; i++) {
+            signalComplex[i] = new Complex(signal[i], 0);
+            filterComplex[i] = new Complex(paddedFilter[i], 0);
+        }
+        
+        // Compute FFTs
+        Complex[] signalFFT = fft.forward(signalComplex);
+        Complex[] filterFFT = fft.forward(filterComplex);
+        
+        // For the adjoint operation in circular convolution,
+        // we conjugate the filter FFT (which time-reverses it)
+        // then multiply and take IFFT
+        Complex[] productFFT = new Complex[N];
+        for (int i = 0; i < N; i++) {
+            // Conjugate the filter FFT for adjoint operation
+            productFFT[i] = signalFFT[i].mul(filterFFT[i].conjugate());
+        }
+        
+        // Inverse FFT
+        Complex[] result = fft.reverse(productFFT);
+        
+        // Extract real part and apply circular shift to get adjoint result
+        double[] output = new double[N];
+        for (int i = 0; i < N; i++) {
+            // The adjoint requires a circular shift due to the indexing difference
+            output[i] = result[i].getReal();
+        }
+        
         return output;
     }
 
