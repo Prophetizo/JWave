@@ -115,7 +115,7 @@ public class ArrayBufferPool {
      */
     public Complex[] borrowComplexArray(int minSize) {
         if (minSize <= 0) {
-            throw new IllegalArgumentException("Array size must be positive");
+            throw new IllegalArgumentException("Array size must be positive, got: " + minSize);
         }
         
         // Don't pool very large arrays

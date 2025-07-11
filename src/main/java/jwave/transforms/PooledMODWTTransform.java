@@ -415,19 +415,108 @@ public class PooledMODWTTransform extends MODWTTransform {
      * Performs FFT-based circular convolution into a provided output buffer.
      */
     private void circularConvolveFFTInto(double[] signal, double[] filter, double[] output) {
-        // For FFT methods, we still need to use the pooled implementation
-        // from performConvolution and copy the result
-        double[] result = performConvolution(signal, filter, false);
-        System.arraycopy(result, 0, output, 0, signal.length);
+        circularConvolveFFTIntoHelper(signal, filter, output, false);
     }
     
     /**
      * Performs FFT-based circular convolution adjoint into a provided output buffer.
      */
     private void circularConvolveFFTAdjointInto(double[] signal, double[] filter, double[] output) {
-        // For FFT methods, we still need to use the pooled implementation
-        // from performConvolution and copy the result
-        double[] result = performConvolution(signal, filter, true);
-        System.arraycopy(result, 0, output, 0, signal.length);
+        circularConvolveFFTIntoHelper(signal, filter, output, true);
+    }
+    
+    /**
+     * Helper method for FFT-based circular convolution that writes directly to output buffer.
+     * This avoids the memory leak from not returning the pooled array from performConvolution.
+     * 
+     * @param signal The input signal
+     * @param filter The filter coefficients
+     * @param output The output buffer to write results to
+     * @param adjoint If true, performs adjoint operation (multiply by conjugate)
+     */
+    private void circularConvolveFFTIntoHelper(double[] signal, double[] filter, double[] output, boolean adjoint) {
+        int N = signal.length;
+        
+        ArrayBufferPool pool = ArrayBufferPool.getInstance();
+        
+        // Borrow arrays from pool
+        double[] paddedFilter = pool.borrowDoubleArray(N);
+        Complex[] signalComplex = pool.borrowComplexArray(N);
+        Complex[] filterComplex = pool.borrowComplexArray(N);
+        Complex[] productFFT = pool.borrowComplexArray(N);
+        
+        Complex[] signalFFT = null;
+        Complex[] filterFFT = null;
+        Complex[] inversed = null;
+        
+        try {
+            // Clear arrays
+            Arrays.fill(paddedFilter, 0, N, 0.0);
+            
+            // Wrap filter to signal length
+            for (int i = 0; i < filter.length; i++) {
+                paddedFilter[i % N] += filter[i];
+            }
+            
+            // Convert to complex arrays
+            for (int i = 0; i < N; i++) {
+                signalComplex[i].setReal(signal[i]);
+                signalComplex[i].setImag(0);
+                filterComplex[i].setReal(paddedFilter[i]);
+                filterComplex[i].setImag(0);
+            }
+            
+            // Compute FFTs
+            signalFFT = fft.forward(signalComplex);
+            filterFFT = fft.forward(filterComplex);
+            
+            // Pointwise multiplication in frequency domain
+            for (int i = 0; i < N; i++) {
+                double sigReal = signalFFT[i].getReal();
+                double sigImag = signalFFT[i].getImag();
+                double filReal = filterFFT[i].getReal();
+                double filImag = filterFFT[i].getImag();
+                
+                double real, imag;
+                if (adjoint) {
+                    // For adjoint: multiply by conjugate of filter (real, -imag)
+                    real = sigReal * filReal + sigImag * filImag;
+                    imag = sigImag * filReal - sigReal * filImag;
+                } else {
+                    // For forward: standard complex multiplication
+                    real = sigReal * filReal - sigImag * filImag;
+                    imag = sigReal * filImag + sigImag * filReal;
+                }
+                
+                productFFT[i].setReal(real);
+                productFFT[i].setImag(imag);
+            }
+            
+            // Inverse FFT
+            inversed = fft.reverse(productFFT);
+            
+            // Extract real part directly to output buffer
+            for (int i = 0; i < N; i++) {
+                output[i] = inversed[i].getReal();
+            }
+            
+        } finally {
+            // Return all borrowed arrays to the pool
+            pool.returnDoubleArray(paddedFilter);
+            pool.returnComplexArray(signalComplex);
+            pool.returnComplexArray(filterComplex);
+            pool.returnComplexArray(productFFT);
+            
+            // Return FFT-allocated arrays if they were created
+            if (signalFFT != null) {
+                pool.returnComplexArray(signalFFT);
+            }
+            if (filterFFT != null) {
+                pool.returnComplexArray(filterFFT);
+            }
+            if (inversed != null) {
+                pool.returnComplexArray(inversed);
+            }
+        }
     }
 }
