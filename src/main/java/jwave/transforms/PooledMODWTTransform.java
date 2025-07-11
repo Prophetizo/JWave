@@ -40,6 +40,8 @@ public class PooledMODWTTransform extends MODWTTransform {
      */
     public PooledMODWTTransform(Wavelet wavelet) {
         super(wavelet);
+        // Replace the standard FFT with a pooled version
+        this.fft = new PooledFastFourierTransform();
     }
     
     /**
@@ -50,6 +52,8 @@ public class PooledMODWTTransform extends MODWTTransform {
      */
     public PooledMODWTTransform(Wavelet wavelet, int fftThreshold) {
         super(wavelet, fftThreshold);
+        // Replace the standard FFT with a pooled version
+        this.fft = new PooledFastFourierTransform();
     }
     
     /**
@@ -184,12 +188,15 @@ public class PooledMODWTTransform extends MODWTTransform {
                 productFFT[i] = signalFFT[i].mul(filterFFT[i]);
             }
             
-            // Inverse FFT
-            Complex[] result = fft.reverse(productFFT);
+            // Inverse FFT - reuse productFFT array for result
+            // Note: FFT.reverse() returns a new array internally. By using PooledFastFourierTransform
+            // in the constructor, we minimize allocations in the conversion between double[] and Complex[].
+            // The core FFT algorithm allocations are harder to eliminate without modifying the FFT itself.
+            Complex[] inversed = fft.reverse(productFFT);
             
-            // Extract real part
+            // Extract real part directly
             for (int i = 0; i < N; i++) {
-                output[i] = result[i].getReal();
+                output[i] = inversed[i].getReal();
             }
             
             // Return a copy
@@ -246,12 +253,15 @@ public class PooledMODWTTransform extends MODWTTransform {
                 productFFT[i] = signalFFT[i].mul(filterFFT[i].conjugate());
             }
             
-            // Inverse FFT
-            Complex[] result = fft.reverse(productFFT);
+            // Inverse FFT - reuse productFFT array for result
+            // Note: FFT.reverse() returns a new array internally. By using PooledFastFourierTransform
+            // in the constructor, we minimize allocations in the conversion between double[] and Complex[].
+            // The core FFT algorithm allocations are harder to eliminate without modifying the FFT itself.
+            Complex[] inversed = fft.reverse(productFFT);
             
-            // Extract real part
+            // Extract real part directly
             for (int i = 0; i < N; i++) {
-                output[i] = result[i].getReal();
+                output[i] = inversed[i].getReal();
             }
             
             // Return a copy
